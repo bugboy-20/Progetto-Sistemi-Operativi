@@ -15,6 +15,6 @@ In particolare:
 
 ## Link Utili
 
-[Libro su umps3](http://cs.unibo.it/~renzo/doc/umps3/uMPS3princOfOperations.pdf)
-[capitolo 2 del libro](http://cs.unibo.it/~renzo/so/panda+/panda+.pdf)
-[pdf del progetto](http://cs.unibo.it/~renzo/so/panda+/panda+phase1.pdf)
+- [Libro su umps3](http://cs.unibo.it/~renzo/doc/umps3/uMPS3princOfOperations.pdf)
+- [capitolo 2 del libro](http://cs.unibo.it/~renzo/so/panda+/panda+.pdf)
+- [pdf del progetto](http://cs.unibo.it/~renzo/so/panda+/panda+phase1.pdf)
