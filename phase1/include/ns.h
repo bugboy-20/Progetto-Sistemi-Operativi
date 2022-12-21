@@ -1,4 +1,4 @@
-#include "types.h"
+#include "include/pandos_types.h"
 
 void initNamespaces();
 nsd_t *getNamesapce(pcb_t *p, int type);
