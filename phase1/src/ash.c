@@ -1,6 +1,8 @@
 #include "../include/ash.h"
-#include "../../include/pandos_const.h"
-//#include <pandos_types.h>
+#include "hashtable.h"
+#include <types.h>
+#include <pandos_const.h>
+#include <pandos_types.h>
 
 //list of semd type
 typedef struct semd_list {
@@ -8,8 +10,14 @@ typedef struct semd_list {
     struct list_head list;
 } semd_list;
 
-static semd_t semd_table[MAX_PROC];
+typedef struct semd_hash {
+    semd_t *semd;
+    struct hlist_node node;
+} semd_hash;
+
+static semd_t semd_table[MAXPROC];
 static struct list_head semdFree_h;
+static DEFINE_HASHTABLE(semd_h, 5);
 /**
  * Viene inserito il PCB puntato da p nella coda dei processi bloccati associata al SEMD con chiave semAdd.
  * Se il semaforo corrispondente non è presente nella ASH,
@@ -18,8 +26,7 @@ static struct list_head semdFree_h;
  * Se non è possibile allocare un nuovo SEMD perché la lista di quelli liberi è vuota, restituisce TRUE.
  * In tutti gli altri casi, restituisce FALSE.
  */
-int insertBlocked(int *semAdd, pcb_t *p) {
-}
+int insertBlocked(int *semAdd, pcb_t *p);
 /**
  * Ritorna il primo PCB dalla coda dei processi bloccati (s_procq) associata al SEMD della ASH con chiave semAdd.
  * Se tale descrittore non esiste nella ASH, restituisce NULL.
@@ -47,9 +54,6 @@ pcb_t *headBlocked(int *semAdd);
  */
 void initASH() {
     INIT_LIST_HEAD(&semdFree_h);
-
     for(int i=0; i<MAXPROC; i++)
         list_add(&semd_table[i].s_freelink, &semdFree_h);
-    
 }
-
