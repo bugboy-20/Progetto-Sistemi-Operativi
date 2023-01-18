@@ -1,32 +1,40 @@
 #include "../include/ash.h"
 #include "hashtable.h"
+#include "list.h"
+#define NULL 0x0
 #include <types.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
 
-//list of semd type
-typedef struct semd_list {
-    semd_t* semd;
-    struct list_head list;
-} semd_list;
-
-typedef struct semd_hash {
-    semd_t *semd;
-    struct hlist_node node;
-} semd_hash;
-
 static semd_t semd_table[MAXPROC];
-static struct list_head semdFree_h;
+static LIST_HEAD(semdFree_h);
 static DEFINE_HASHTABLE(semd_h, 5);
-/**
- * Viene inserito il PCB puntato da p nella coda dei processi bloccati associata al SEMD con chiave semAdd.
- * Se il semaforo corrispondente non è presente nella ASH,
- * alloca un nuovo SEMD dalla lista di quelli liberi (semdFree) e lo inserisce nella ASH,
- * settando i campi in maniera opportuna (i.e. key e s_procQ).
- * Se non è possibile allocare un nuovo SEMD perché la lista di quelli liberi è vuota, restituisce TRUE.
- * In tutti gli altri casi, restituisce FALSE.
- */
-int insertBlocked(int *semAdd, pcb_t *p);
+
+int insertBlocked(int *semAdd, pcb_t *p) {
+    semd_t *sem;
+
+    hash_for_each_possible(semd_h,sem,s_link,*semAdd) { //assumo che avvenga al più un solo giro essendo la chiave univoca (no?)
+        list_add_tail(&p->p_list, &sem->s_procq); // non sono affatto sicuro che devo appenderlo per p_list
+        return false;
+    }
+
+    //SEM non nella ASH -> Bisogna allocarne uno
+
+    if(list_empty(&semdFree_h))
+        return true;
+
+    //rimuovo il semaforo da semdFree_h
+    sem = list_first_entry(&semdFree_h,semd_t,s_freelink);
+    list_del(&sem->s_freelink);
+
+    //set dei campi ed aggiunta
+    sem->s_key=semAdd;
+    INIT_LIST_HEAD(&sem->s_procq);
+    hash_add(semd_h, &sem->s_link, *semAdd);
+
+
+    return false;
+}
 /**
  * Ritorna il primo PCB dalla coda dei processi bloccati (s_procq) associata al SEMD della ASH con chiave semAdd.
  * Se tale descrittore non esiste nella ASH, restituisce NULL.
