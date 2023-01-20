@@ -2,7 +2,7 @@
 #ifndef NS_H
 #define NS_H
 
-#include "umps/const.h"
+#include <umps/const.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
 

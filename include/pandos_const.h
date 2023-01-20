@@ -7,7 +7,7 @@
  *
  ****************************************************************************/
 
-#include <umps3/umps/const.h>
+#include <umps/const.h>
 
 /* Workaround Redefine NULL as 0, in umps3 is defined as -1 */
 #ifdef NULL

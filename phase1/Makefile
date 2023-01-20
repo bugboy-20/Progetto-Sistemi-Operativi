@@ -9,7 +9,7 @@ SOURCE = src
 BUILD = build
 CFLAGS = -ffreestanding -ansi -mips1 -mabi=32 -std=gnu99 -mno-gpopt -EL -G 0 -mno-abicalls -fno-pic -mfp32 -I$(UDIR) -I$(PANDOS_HEADERS) -Wall -O0
 LFLAGS = -G 0 -nostdlib -T $(SDIR)/umpscore.ldscript -m elf32ltsmip
-OBJECTS = $(BUILD)/p1test.o $(BUILD)/pcb.o $(BUILD)/libumps.o $(BUILD)/crtso.o
+OBJECTS = $(BUILD)/p1test.o $(BUILD)/pcb.o $(BUILD)/ash.o $(BUILD)/ns.o $(BUILD)/libumps.o $(BUILD)/crtso.o
 
 all: kernel.core.umps
 
