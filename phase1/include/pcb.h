@@ -27,7 +27,7 @@ void mkEmptyProcQ(struct list_head *head);
 /**
  * Restituisce TRUE se la lista puntata da head è vuota, FALSE altrimenti.
  */
-int EmptyProcQ(struct list_head *head);
+int emptyProcQ(struct list_head *head);
 /**
  * Inserisce l’elemento puntato da p nella coda dei processi puntata da head.
  */

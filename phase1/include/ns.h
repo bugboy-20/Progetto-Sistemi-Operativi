@@ -11,7 +11,7 @@ void initNamespaces();
 /**
  * Ritorna il namespace di tipo type associato al processo p (o NULL).
  */
-nsd_t *getNamesapce(pcb_t *p, int type);
+nsd_t *getNamespace(pcb_t *p, int type);
 /**
  * Associa al processo p e a tutti i suoi figli il namespace ns.
  * Ritorna FALSE in caso di errore, TRUE altrimenti.
