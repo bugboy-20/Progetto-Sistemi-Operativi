@@ -52,21 +52,43 @@ pcb_t *removeBlocked(int *semAdd) {
     return pcb;
 }
 /**
- * Rimuove il PCB puntato da p dalla coda del semaforo su cui è bloccato (indicato da p->p_semAdd).
- * Se il PCB non compare in tale coda, allora restituisce NULL (condizione di errore). Altrimenti, restituisce p.
- * Se la coda dei processi bloccati per il semaforo diventa vuota,
- * rimuove il descrittore corrispondente dalla ASH e lo inserisce nella coda dei descrittori liberi
+ X Rimuove il PCB puntato da p dalla coda del semaforo su cui è bloccato (indicato da p->p_semAdd).
+ ? Se il PCB non compare in tale coda, allora restituisce NULL (condizione di errore). Altrimenti, restituisce p.
+ X Se la coda dei processi bloccati per il semaforo diventa vuota,
+ X rimuove il descrittore corrispondente dalla ASH e lo inserisce nella coda dei descrittori liberi
  */
 pcb_t *outBlocked(pcb_t *p) {
-    return NULL;
+
+    semd_t *sem=NULL;
+
+    hash_for_each_possible(semd_h, sem, s_link, *p->p_semAdd); //forse anche questo è un metodo leggittimo per interrogare l'ASH
+
+    if(sem==NULL)
+        return NULL;
+
+    list_del(&p->p_list);
+    p->p_semAdd=NULL; //immagino...
+
+    if(list_empty(&sem->s_procq)) {
+        hlist_del(&sem->s_link);
+        list_add(&sem->s_freelink, &semdFree_h);
+    }
+
+    return p;
 }
 /**
- * Restituisce (senza rimuovere) il puntatore al PCB che si trova in testa
- * alla coda dei processi associata al SEMD con chiave semAdd.
- * Ritorna NULL se il SEMD non compare nella ASH oppure se compare ma la sua coda dei processi è vuota.
+ X Restituisce (senza rimuovere) il puntatore al PCB che si trova in testa
+ X alla coda dei processi associata al SEMD con chiave semAdd.
+ X Ritorna NULL se il SEMD non compare nella ASH oppure se compare ma la sua coda dei processi è vuota.
  */
 pcb_t *headBlocked(int *semAdd) {
-    return NULL;
+    semd_t *sem=NULL;
+
+    hash_for_each_possible(semd_h, sem, s_link, *semAdd);
+
+    if(sem==NULL || list_empty(&sem->s_procq))
+        return NULL;
+    return list_first_entry(&sem->s_procq, pcb_t, p_list);
 }
 /**
  * Inizializza la lista dei semdFree in modo da contenere tutti gli elementi della semdTable.
