@@ -13,7 +13,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
     semd_t *sem;
 
     hash_for_each_possible(semd_h,sem,s_link,*semAdd) { //assumo che avvenga al più un solo giro essendo la chiave univoca (no?)
-        list_add_tail(&p->p_list, &sem->s_procq); // non sono affatto sicuro che devo appenderlo per p_list
+        list_add_tail(&p->p_list, &sem->s_procq); //TODO non sono affatto sicuro che devo appenderlo per p_list
         return FALSE;
     }
 
@@ -34,15 +34,22 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 
     return FALSE;
 }
-/**
- * Ritorna il primo PCB dalla coda dei processi bloccati (s_procq) associata al SEMD della ASH con chiave semAdd.
- * Se tale descrittore non esiste nella ASH, restituisce NULL.
- * Altrimenti, restituisce l’elemento rimosso.
- * Se la coda dei processi bloccati per il semaforo diventa vuota,
- * rimuove il descrittore corrispondente dalla ASH e lo inserisce nella coda dei descrittori liberi (semdFree_h).
- */
+
 pcb_t *removeBlocked(int *semAdd) {
-    return NULL;
+    semd_t *sem=NULL;
+    pcb_t *pcb=NULL;
+
+    hash_for_each_possible(semd_h, sem, s_link, *semAdd) {
+        //serve un controllo?
+        pcb = list_first_entry(&sem->s_procq, pcb_t, p_list);
+        list_del(&pcb->p_list);
+
+        if (list_empty(&sem->s_procq)) {
+            hash_del(&sem->s_link);
+            list_add(&sem->s_freelink, &semdFree_h);
+        }
+    }
+    return pcb;
 }
 /**
  * Rimuove il PCB puntato da p dalla coda del semaforo su cui è bloccato (indicato da p->p_semAdd).
