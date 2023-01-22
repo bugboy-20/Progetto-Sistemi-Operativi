@@ -9,8 +9,8 @@
 In particolare:
 
 - Diego [14..18]
-- Simo
-- Piske [1..3] ∪ Ø
+- Simo [4..9]
+- Piske [1..3] ∪ [10..13]
 - Michele [19..23]
 
 ## Link Utili
