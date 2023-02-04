@@ -40,12 +40,64 @@ pcb_t *allocPcb()
     return toBeAllocated;
 }
 
-void mkEmptyProcQ(struct list_head *head) {}
-int emptyProcQ(struct list_head *head) { return 420; }
-void insertProcQ(struct list_head *head, pcb_t *p) {}
-pcb_t *headProcQ(struct list_head *head) { return NULL; }
-pcb_t *removeProcQ(struct list_head *head) { return NULL; }
-pcb_t *outProcQ(struct list_head *head, pcb_t *p) { return NULL; }
+void mkEmptyProcQ(struct list_head *head)
+{
+    INIT_LIST_HEAD(head);
+}
+
+int emptyProcQ(struct list_head *head)
+{
+    return list_empty(head);
+}
+
+void insertProcQ(struct list_head *head, pcb_t *p)
+{
+    if (list_empty(head))
+        INIT_LIST_HEAD(head);
+        
+
+    list_add_tail(&p->p_list, head);
+}
+
+pcb_t *headProcQ(struct list_head *head)
+{
+    if (list_empty(head))
+        return NULL;
+    return list_first_entry(head, pcb_t, p_list);
+}
+
+pcb_t *removeProcQ(struct list_head *head)
+{
+    if (emptyProcQ(head))
+        return NULL;
+    pcb_t *tmp = headProcQ(head);
+    
+    list_del(head->next);
+
+    return tmp;
+}
+
+pcb_t *outProcQ(struct list_head *head, pcb_t *p)
+{
+    // Controllo se la lista è vuota
+    if (emptyProcQ(head))
+        return NULL;
+    
+    bool found = false;
+    for (struct list_head *tmp = (head)->next; tmp != head && !found; tmp = tmp->next)
+    {
+        if (tmp == &p->p_list)
+        {
+            found = true;
+            list_del(tmp);
+        }
+    }
+
+    if (!found)
+        return NULL;
+    else
+        return p;
+}
 
 int emptyChild(pcb_t *p)
 {
@@ -67,9 +119,15 @@ pcb_t *removeChild(pcb_t *p)
 {
     if (emptyChild(p))
         return NULL;
-
-    pcb_PTR firstChild = container_of(&p->p_child.next, pcb_t, p_sib);
-    return outChild(firstChild);
+    
+    pcb_t *tmp = list_first_entry((&p->p_child)->next, pcb_t, p_child);
+    //pcb_t *tmp = list_first_entry((&p->p_child)->next, pcb_t, p_sib);
+    
+    list_del((&p->p_child)->next);
+    
+    // TODO: i fratelli comunque vedono ancora l'elemento?
+    
+    return tmp;
 }
 
 pcb_t *outChild(pcb_t *p)
@@ -78,6 +136,23 @@ pcb_t *outChild(pcb_t *p)
         return NULL;
 
     list_del(&p->p_sib); /*remove p from the sibling list*/
+
+    // Versione da CONTROLLARE TODO
+    /*
+    pcb_t *res;
+
+    bool found = false;
+    for (struct list_head *tmp = (head)->next; tmp != head && !found; tmp = tmp->next)
+    {
+        if (tmp == &p)
+        {
+            found = true;
+            list_del(tmp);
+        }
+    }
+
+    list_del(&(p->p_parent)->p_child); // remove p from the sibling list
+    */
     p->p_sib.next = p->p_sib.prev = NULL;
     p->p_parent = NULL;
     return p;
