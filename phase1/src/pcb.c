@@ -57,7 +57,6 @@ void insertProcQ(struct list_head *head, pcb_t *p)
     if (list_empty(head))
         INIT_LIST_HEAD(head);
         
-
     list_add_tail(&p->p_list, head);
 }
 
@@ -111,7 +110,7 @@ void insertChild(pcb_t *prnt, pcb_t *p)
         return;
 
     p->p_parent = prnt;
-    list_add(&p->p_sib, &prnt->p_child); /* TODO: cosa succede se p ha già dei siblings*/
+    list_add_tail(&p->p_sib, &prnt->p_child); /* TODO: cosa succede se p ha già dei siblings*/
 }
 
 pcb_t *removeChild(pcb_t *p)
@@ -119,12 +118,9 @@ pcb_t *removeChild(pcb_t *p)
     if (emptyChild(p))
         return NULL;
     
-    pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_child);
-    //pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
-    
+    pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
+
     list_del((&p->p_child)->next);
-    
-    // TODO: i fratelli comunque vedono ancora l'elemento?
     
     return tmp;
 }
