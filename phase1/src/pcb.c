@@ -18,8 +18,10 @@ void initPcbs()
 
 void freePcb(pcb_t *p)
 {
-    if (p == NULL) // TODO: controllare se p non è già libero?
+    if (p == NULL)
         return;
+    
+    // TODO: controllare se p non è già libero?
 
     list_add(&p->p_list, &pcbFree_h);
 }
@@ -79,24 +81,21 @@ pcb_t *removeProcQ(struct list_head *head)
 
 pcb_t *outProcQ(struct list_head *head, pcb_t *p)
 {
-    // Controllo se la lista è vuota
     if (emptyProcQ(head))
         return NULL;
     
-    bool found = false;
-    for (struct list_head *tmp = (head)->next; tmp != head && !found; tmp = tmp->next)
+    struct list_head *tmp;
+
+    list_for_each(tmp, head)
     {
         if (tmp == &p->p_list)
         {
-            found = true;
             list_del(tmp);
+            return p;
         }
     }
 
-    if (!found)
-        return NULL;
-    else
-        return p;
+    return NULL;
 }
 
 int emptyChild(pcb_t *p)
@@ -120,8 +119,8 @@ pcb_t *removeChild(pcb_t *p)
     if (emptyChild(p))
         return NULL;
     
-    pcb_t *tmp = list_first_entry((&p->p_child)->next, pcb_t, p_child);
-    //pcb_t *tmp = list_first_entry((&p->p_child)->next, pcb_t, p_sib);
+    pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_child);
+    //pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
     
     list_del((&p->p_child)->next);
     
@@ -137,23 +136,6 @@ pcb_t *outChild(pcb_t *p)
 
     list_del(&p->p_sib); /*remove p from the sibling list*/
 
-    // Versione da CONTROLLARE TODO
-    /*
-    pcb_t *res;
-
-    bool found = false;
-    for (struct list_head *tmp = (head)->next; tmp != head && !found; tmp = tmp->next)
-    {
-        if (tmp == &p)
-        {
-            found = true;
-            list_del(tmp);
-        }
-    }
-
-    list_del(&(p->p_parent)->p_child); // remove p from the sibling list
-    */
-    p->p_sib.next = p->p_sib.prev = NULL;
     p->p_parent = NULL;
     return p;
 }
