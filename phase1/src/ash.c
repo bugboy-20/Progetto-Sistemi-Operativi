@@ -1,4 +1,5 @@
 #include "../include/ash.h"
+#include "hash.h"
 #include "hashtable.h"
 #include "list.h"
 #include <types.h>
@@ -9,18 +10,29 @@ static semd_t semd_table[MAXPROC];
 static LIST_HEAD(semdFree_h);
 static DEFINE_HASHTABLE(semd_h, 5);
 
+
+/* Viene inserito il PCB puntato da p nella coda dei processi bloccati associata al SEMD con chiave semAdd.
+ * Se il semaforo corrispondente non è presente nella ASH, alloca un nuovo SEMD dalla lista di quelli liberi (semdFree) e lo inserisce nella ASH, settando I campi in maniera opportuna (i.e.key e s_procQ).
+ * Se non è possibile allocare un nuovo SEMD perché la lista di quelli liberi è vuota, restituisce TRUE.
+ * In tutti gli altri casi, restituisce FALSE.
+*/
 int insertBlocked(int *semAdd, pcb_t *p) {
     semd_t *sem;
 
-    hash_for_each_possible(semd_h,sem,s_link,*semAdd) { //assumo che avvenga al più un solo giro essendo la chiave univoca (no?)
-        list_add_tail(&p->p_list, &sem->s_procq); //TODO non sono affatto sicuro che devo appenderlo per p_list
+
+    hash_for_each_possible(semd_h,sem,s_link, hash32_ptr(semAdd)) {
+        if(sem->s_key!=semAdd)
+            continue;
+        p->p_semAdd=semAdd;
+        list_add_tail(&p->p_list, &sem->s_procq);
         return FALSE;
     }
 
     //SEM non nella ASH -> Bisogna allocarne uno
-
     if(list_empty(&semdFree_h))
         return TRUE;
+
+
 
     //rimuovo il semaforo da semdFree_h
     sem = list_first_entry(&semdFree_h,semd_t,s_freelink);
@@ -29,27 +41,49 @@ int insertBlocked(int *semAdd, pcb_t *p) {
     //set dei campi ed aggiunta
     sem->s_key=semAdd;
     INIT_LIST_HEAD(&sem->s_procq);
-    hash_add(semd_h, &sem->s_link, *semAdd);
+    hash_add(semd_h, &sem->s_link, hash32_ptr(semAdd));
+    p->p_semAdd=semAdd;
+    list_add_tail(&p->p_list, &sem->s_procq);
 
 
     return FALSE;
 }
 
+/*
+ * Ritorna il primo PCB dalla coda dei processi bloccati (s_procq) associata al SEMD dellaASH con chiave semAdd.
+ X Se tale descrittore non esiste nella ASH, restituisce NULL.
+ * Altrimenti, restituisce l’elemento rimosso.
+ * Se la coda dei processi bloccati per il semaforo diventa vuota,
+ *      rimuove il descrittore corrispondente dalla ASH
+ *      e lo inserisce nella coda dei descrittori liberi (semdFree_h).
+*/
 pcb_t *removeBlocked(int *semAdd) {
+    /*
     semd_t *sem=NULL;
     pcb_t *pcb=NULL;
 
-    hash_for_each_possible(semd_h, sem, s_link, *semAdd) {
-        //serve un controllo?
+    hash_for_each_possible(semd_h, sem, s_link, hash32_ptr(semAdd)) {
+        if(sem->s_key!=semAdd)
+            continue;
+
+        if(list_empty(&sem->s_procq))
+            return NULL;
         pcb = list_first_entry(&sem->s_procq, pcb_t, p_list);
+        if(pcb == NULL)
+            return NULL;
+
         list_del(&pcb->p_list);
+        pcb->p_semAdd=NULL;
 
         if (list_empty(&sem->s_procq)) {
             hash_del(&sem->s_link);
             list_add(&sem->s_freelink, &semdFree_h);
         }
+        return pcb;
     }
-    return pcb;
+    return NULL;
+    */
+    return outBlocked(headBlocked(semAdd));
 }
 /**
  X Rimuove il PCB puntato da p dalla coda del semaforo su cui è bloccato (indicato da p->p_semAdd).
@@ -61,7 +95,7 @@ pcb_t *outBlocked(pcb_t *p) {
 
     semd_t *sem=NULL;
 
-    hash_for_each_possible(semd_h, sem, s_link, *p->p_semAdd); //forse anche questo è un metodo leggittimo per interrogare l'ASH
+    hash_for_each_possible(semd_h, sem, s_link, hash32_ptr(p->p_semAdd)); //forse anche questo è un metodo leggittimo per interrogare l'ASH
 
     if(sem==NULL)
         return NULL;
@@ -84,18 +118,30 @@ pcb_t *outBlocked(pcb_t *p) {
 pcb_t *headBlocked(int *semAdd) {
     semd_t *sem=NULL;
 
-    hash_for_each_possible(semd_h, sem, s_link, *semAdd);
+    hash_for_each_possible(semd_h, sem, s_link, hash32_ptr(semAdd)) {
 
-    if(sem==NULL || list_empty(&sem->s_procq))
-        return NULL;
-    return list_first_entry(&sem->s_procq, pcb_t, p_list);
+        if(sem->s_key!=semAdd)
+            continue;
+
+        if(sem==NULL) {
+            addokbuf("sem nullo o vuoto");
+            return NULL;
+        }
+        else if (list_empty(&sem->s_procq)) {
+            addokbuf("sem vuoto");
+            return NULL;
+        }
+        return list_first_entry(&sem->s_procq, pcb_t, p_list);
+    }
+
+    return NULL;
 }
 /**
- * Inizializza la lista dei semdFree in modo da contenere tutti gli elementi della semdTable.
- * Questo metodo viene invocato una volta sola durante l’inizializzazione della struttura dati.
+ X Inizializza la lista dei semdFree in modo da contenere tutti gli elementi della semdTable.
+ x Questo metodo viene invocato una volta sola durante l’inizializzazione della struttura dati.
  */
 void initASH() {
-    INIT_LIST_HEAD(&semdFree_h);
+    //INIT_LIST_HEAD(&semdFree_h);
     for(int i=0; i<MAXPROC; i++)
         list_add(&semd_table[i].s_freelink, &semdFree_h);
 }
