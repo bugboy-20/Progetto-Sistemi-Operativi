@@ -38,11 +38,12 @@ void initNamespaces() {
 nsd_t *getNamespace(pcb_t *p, int type) {
     for(int i=0;i<NS_TYPE_MAX; i++)
     {
-        if(p->namespaces[i]->n_type == NS_PID) //if(p->namespaces[i]->n_type == type)
+        if(p->namespaces[i] != NULL)
         {
-            return p->namespaces[i];
-        }
-    }    
+            if(p->namespaces[i]->n_type == NS_PID) //if(p->namespaces[i]->n_type == type)
+                return p->namespaces[i];
+        }    
+    }
     return NULL;
 }
 /**
@@ -51,14 +52,15 @@ nsd_t *getNamespace(pcb_t *p, int type) {
  */
 int addNamespace(pcb_t *p, nsd_t *ns) {
     //NAMESPACE GIà ALLOCATO
-     // che controllo bisogna fare?
-        p->namespaces[ns->n_type] = ns; //p potrebbe avere un namespace già associato? 
+    if(p !=NULL && ns ! =NULL){
+        p->namespaces[ns->n_type] = ns;
         pcb_t* i;
         list_for_each_entry(i, p->p_child, p_sib)
         {
             i->namespaces[ns->n_type] = ns;
         }
         return TRUE;
+    }
     return FALSE; // perché dovrebbe fallire non lo so ancora
 }
 /**
