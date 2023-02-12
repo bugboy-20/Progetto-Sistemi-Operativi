@@ -18,7 +18,7 @@ type liberi o inutilizzati.
 • type_nsList_h: Lista dei
 namespace di tipo type attivi.
 */
-static nsd_t PID_nsd[MAX_PROC];
+static nsd_t PID_nsd[MAXPROC];
 static LIST_HEAD(PID_nsFree_h);
 static LIST_HEAD(PID_nsList_h);
 /**
@@ -26,7 +26,7 @@ static LIST_HEAD(PID_nsList_h);
  * Questo metodo viene invocato una volta sola durante l’inizializzazione della struttura dati.
  */
 void initNamespaces() {
-    for(int i=0; i<MAX_PROC;i++)
+    for(int i=0; i<MAXPROC;i++)
     {
         PID_nsd[i].n_type = NS_PID;
         list_add(&PID_nsd[i].n_link, &PID_nsFree_h);
@@ -55,7 +55,7 @@ int addNamespace(pcb_t *p, nsd_t *ns) {
     if(p !=NULL && ns ! =NULL){
         p->namespaces[ns->n_type] = ns;
         pcb_t* i;
-        list_for_each_entry(i, p->p_child, p_sib)
+        list_for_each_entry(i, &p->p_child, p_sib)
         {
             i->namespaces[ns->n_type] = ns;
         }
@@ -69,9 +69,9 @@ int addNamespace(pcb_t *p, nsd_t *ns) {
 nsd_t *allocNamespace(int type) {
     if(type == NS_PID && !list_empty(&PID_nsFree_h))
     {
-        nsd_t *ns = list_first_entry(PID_nsFree_h, nsd_t, n_link);
+        nsd_t *ns = list_first_entry(&PID_nsFree_h, nsd_t, n_link);
         list_move(&ns->n_link, &PID_nsList_h);
-        return *ns;
+        return ns;
     }
     return NULL;
 }
@@ -79,7 +79,7 @@ nsd_t *allocNamespace(int type) {
  * Libera il namespace ns ri-inserendolo nella lista di namespace corretta.
  */
 void freeNamespace(nsd_t *ns) {
-    list_move(&ns.n_link, &PID_nsFree_h);
+    list_move(&ns->n_link, &PID_nsFree_h);
 }
 
 #endif // NS_H
