@@ -38,7 +38,7 @@ void initNamespaces() {
 nsd_t *getNamespace(pcb_t *p, int type) {
     for(int i=0;i<NS_TYPE_MAX; i++)
     {
-        if(p->namespaces[i]->n_type == NS_PID)
+        if(p->namespaces[i]->n_type == NS_PID) //if(p->namespaces[i]->n_type == type)
         {
             return p->namespaces[i];
         }
@@ -50,17 +50,26 @@ nsd_t *getNamespace(pcb_t *p, int type) {
  * Ritorna FALSE in caso di errore, TRUE altrimenti.
  */
 int addNamespace(pcb_t *p, nsd_t *ns) {
-    if()
-    return FALSE;
+    //NAMESPACE GIà ALLOCATO
+     // che controllo bisogna fare?
+        p->namespaces[ns->n_type] = ns; //p potrebbe avere un namespace già associato? 
+        pcb_t* i;
+        list_for_each_entry(i, p->p_child, p_sib)
+        {
+            i->namespaces[ns->n_type] = ns;
+        }
+        return TRUE;
+    return FALSE; // perché dovrebbe fallire non lo so ancora
 }
 /**
  * Alloca un namespace di tipo type dalla lista corretta.
  */
 nsd_t *allocNamespace(int type) {
-    if(type == NS_PID)
+    if(type == NS_PID && !list_empty(&PID_nsFree_h))
     {
-        list_move(&PID_nsFree_h, &PID_nsList_h);
-        //return PID_nsList_h;
+        nsd_t *ns = list_first_entry(PID_nsFree_h, nsd_t, n_link);
+        list_move(&ns->n_link, &PID_nsList_h);
+        return *ns;
     }
     return NULL;
 }
@@ -68,7 +77,7 @@ nsd_t *allocNamespace(int type) {
  * Libera il namespace ns ri-inserendolo nella lista di namespace corretta.
  */
 void freeNamespace(nsd_t *ns) {
-    list_move(&ns, &PID_nsFree_h);
+    list_move(&ns.n_link, &PID_nsFree_h);
 }
 
 #endif // NS_H
