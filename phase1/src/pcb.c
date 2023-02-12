@@ -5,6 +5,7 @@
 static struct list_head pcbFree_h;
 static pcb_t pcbFree_table[MAXPROC];
 static void definePcb(pcb_PTR p);
+static bool isUndefined(struct list_head *);
 
 void initPcbs()
 {
@@ -20,9 +21,10 @@ void freePcb(pcb_t *p)
 {
     if (p == NULL)
         return;
-    
-    // TODO: controllare se p non è già libero?
 
+    // TODO: controllare se p non è già libero?
+    if (!isUndefined(&p->p_list))
+        list_del_init(&p->p_list);
     list_add(&p->p_list, &pcbFree_h);
 }
 
@@ -37,7 +39,7 @@ pcb_t *allocPcb()
     if (toBeAllocated == NULL)
         return NULL;
 
-    definePcb(toBeAllocated);
+    definePcb(toBeAllocated); // inizializza tutto a 0 o NULL
 
     return toBeAllocated;
 }
@@ -56,7 +58,7 @@ void insertProcQ(struct list_head *head, pcb_t *p)
 {
     if (list_empty(head))
         INIT_LIST_HEAD(head);
-        
+
     list_add_tail(&p->p_list, head);
 }
 
@@ -72,7 +74,7 @@ pcb_t *removeProcQ(struct list_head *head)
     if (emptyProcQ(head))
         return NULL;
     pcb_t *tmp = headProcQ(head);
-    
+
     list_del(head->next);
 
     return tmp;
@@ -82,7 +84,7 @@ pcb_t *outProcQ(struct list_head *head, pcb_t *p)
 {
     if (emptyProcQ(head))
         return NULL;
-    
+
     struct list_head *tmp;
 
     list_for_each(tmp, head)
@@ -101,6 +103,8 @@ int emptyChild(pcb_t *p)
 {
     if (p == NULL)
         return TRUE;
+    if (isUndefined(&p->p_child))
+        return FALSE;
     return list_empty(&p->p_child);
 }
 
@@ -117,11 +121,11 @@ pcb_t *removeChild(pcb_t *p)
 {
     if (emptyChild(p))
         return NULL;
-    
+
     pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
 
-    list_del((&p->p_child)->next);
-    
+    outChild(tmp);
+
     return tmp;
 }
 
@@ -159,7 +163,14 @@ static void definePcb(pcb_PTR p)
 
     p->p_semAdd = NULL;
 
-    // TODO: capire se è giusto allocare i ns così
     for (int i = 0; i < NS_TYPE_MAX; i++)
         p->namespaces[i] = NULL;
+}
+
+static bool isUndefined(struct list_head *l)
+{
+    /* assumo che o sono entrambi NULL o sono entrambi non NULL,
+     * non succede mai che solo uno dei due è NULL
+     */
+    return (l->next == NULL && l->next == NULL);
 }
