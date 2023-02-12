@@ -52,7 +52,7 @@ nsd_t *getNamespace(pcb_t *p, int type) {
  */
 int addNamespace(pcb_t *p, nsd_t *ns) {
     //NAMESPACE GIà ALLOCATO
-    if(p !=NULL && ns ! =NULL){
+    if(p !=NULL && ns != NULL){
         p->namespaces[ns->n_type] = ns;
         pcb_t* i;
         list_for_each_entry(i, &p->p_child, p_sib)
@@ -61,7 +61,7 @@ int addNamespace(pcb_t *p, nsd_t *ns) {
         }
         return TRUE;
     }
-    return FALSE; // perché dovrebbe fallire non lo so ancora
+    return FALSE;
 }
 /**
  * Alloca un namespace di tipo type dalla lista corretta.
