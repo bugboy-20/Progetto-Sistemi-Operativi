@@ -23,48 +23,29 @@ static nsd_t nsd[NS_TYPE_MAX][MAXPROC];
 struct list_head nsFree_h[NS_TYPE_MAX];
 struct list_head nsList_h[NS_TYPE_MAX];
 
-/**
- * Inizializza tutte le liste dei namespace liberi.
- * Questo metodo viene invocato una volta sola durante l’inizializzazione della struttura dati.
- */
 void initNamespaces() {
     for(int j=0; j<NS_TYPE_MAX; j++)
     {
         INIT_LIST_HEAD(&nsFree_h[j]);
         INIT_LIST_HEAD(&nsList_h[j]);
-    for(int i=0; i<MAXPROC;i++)//scorro gli array di tipo PID
-    {
-        nsd[j][i].n_type = j;
-        list_add(&nsd[NS_PID][i].n_link, &nsFree_h[j]);//aggiungo i namespace alla lista di quelli liberi
-    }
-    }
-}
-
-/**
- * Ritorna il namespace di tipo type associato al processo p (o NULL).
- */
-nsd_t *getNamespace(pcb_t *p, int type) {
-    for(int i=0;i<NS_TYPE_MAX; i++)
-    {
-        if(p->namespaces[i] != NULL)
+        for(int i=0; i<MAXPROC;i++)//scorro gli array di tipo j
         {
-            if(p->namespaces[i]->n_type == type)
-                return p->namespaces[i]; //ritorna il namespace del tipo type
-        }    
+            nsd[j][i].n_type = j;
+            list_add(&nsd[NS_PID][i].n_link, &nsFree_h[j]);//aggiungo i namespace alla lista di quelli liberi
+        }
     }
-    return NULL;
 }
 
-/**
- * Associa al processo p e a tutti i suoi figli il namespace ns.
- * Ritorna FALSE in caso di errore, TRUE altrimenti.
- */
+nsd_t *getNamespace(pcb_t *p, int type) {
+    return p->namespaces[type]; //se namespace[type] è null ritorna null, altrimenti ritorna il namespace
+}
+
 int addNamespace(pcb_t *p, nsd_t *ns) {
     //si assume un namespace già allocato
     if(p !=NULL && ns != NULL){
-        p->namespaces[ns->n_type] = ns;//assegnamento al padre
+        p->namespaces[ns->n_type] = ns;//assegnamento al processo padre
         pcb_t* i;
-        list_for_each_entry(i, &p->p_child, p_sib) //assegnamento ai figli
+        list_for_each_entry(i, &p->p_child, p_sib) //scorro i figli per assegnare il namespace
         {
             i->namespaces[ns->n_type] = ns;
         }
@@ -73,25 +54,19 @@ int addNamespace(pcb_t *p, nsd_t *ns) {
     return FALSE; // errore in caso di processo o namespace nullo
 }
 
-/**
- * Alloca un namespace di tipo type dalla lista corretta.
- */
 nsd_t *allocNamespace(int type) {
     if(!list_empty(&nsFree_h[type]))
     {
         nsd_t *ns = list_first_entry(&nsFree_h[type], nsd_t, n_link);
-        list_move(&ns->n_link, &nsList_h[type]);
+        list_move(&ns->n_link, &nsList_h[type]); //sposta ns nella lista dei namespace liberi del suo tipo
         return ns;
     }
-    return NULL;
+    return NULL; //ritorna null se non ci sono namespace liberi
 }
 
-
-/**
- * Libera il namespace ns ri-inserendolo nella lista di namespace corretta.
- */
 void freeNamespace(nsd_t *ns) {
-    list_move(&ns->n_link, &nsFree_h[ns->n_type]);
+    if(ns != NULL)
+        list_move(&ns->n_link, &nsFree_h[ns->n_type]); //sposta ns nella lista dei namespace liberi del suo tipo
 }
 
 #endif // NS_H
