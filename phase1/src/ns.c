@@ -18,10 +18,6 @@ type liberi o inutilizzati.
 • type_nsList_h: Lista dei
 namespace di tipo type attivi.
 */
-static nsd_t PID_nsd[MAXPROC];
-static LIST_HEAD(PID_nsFree_h);
-static LIST_HEAD(PID_nsList_h);
-
 
 static nsd_t nsd[NS_TYPE_MAX][MAXPROC];
 struct list_head nsFree_h[NS_TYPE_MAX];
@@ -87,6 +83,7 @@ nsd_t *allocNamespace(int type) {
         list_move(&ns->n_link, &nsList_h[type]);
         return ns;
     }
+    return NULL;
 }
 
 
@@ -94,7 +91,7 @@ nsd_t *allocNamespace(int type) {
  * Libera il namespace ns ri-inserendolo nella lista di namespace corretta.
  */
 void freeNamespace(nsd_t *ns) {
-    list_move(&ns->n_link, &PID_nsFree_h);
+    list_move(&ns->n_link, &nsFree_h[ns->n_type]);
 }
 
 #endif // NS_H
