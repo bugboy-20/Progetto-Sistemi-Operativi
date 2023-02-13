@@ -2,9 +2,14 @@
 #include <list.h>
 #include "../include/pcb.h"
 
+/* free pcb list */
 static struct list_head pcbFree_h;
+/* pcb bucket */
 static pcb_t pcbFree_table[MAXPROC];
+
+/* initialize every pbc's field to 0 or NULL */
 static void definePcb(pcb_PTR p);
+/* check if the list_head points to NULL */
 static bool isUndefined(struct list_head *);
 
 void initPcbs()
@@ -12,9 +17,7 @@ void initPcbs()
     INIT_LIST_HEAD(&pcbFree_h);
 
     for (int i = 0; i < MAXPROC; i++)
-    {
         list_add(&pcbFree_table[i].p_list, &pcbFree_h);
-    }
 }
 
 void freePcb(pcb_t *p)
@@ -22,7 +25,6 @@ void freePcb(pcb_t *p)
     if (p == NULL)
         return;
 
-    // TODO: controllare se p non è già libero?
     if (!isUndefined(&p->p_list))
         list_del_init(&p->p_list);
     list_add(&p->p_list, &pcbFree_h);
@@ -33,13 +35,13 @@ pcb_t *allocPcb()
     if (list_empty(&pcbFree_h))
         return NULL;
 
-    pcb_PTR toBeAllocated = container_of(pcbFree_h.next, pcb_t, p_list);
-    list_del(pcbFree_h.next);
+    pcb_PTR toBeAllocated = list_first_entry(&pcbFree_h, pcb_t, p_list);
 
-    if (toBeAllocated == NULL)
+    if (toBeAllocated == NULL) // probably useless check, list isn't empty
         return NULL;
 
-    definePcb(toBeAllocated); // inizializza tutto a 0 o NULL
+    list_del(&toBeAllocated->p_list);
+    definePcb(toBeAllocated);
 
     return toBeAllocated;
 }
@@ -101,10 +103,8 @@ pcb_t *outProcQ(struct list_head *head, pcb_t *p)
 
 int emptyChild(pcb_t *p)
 {
-    if (p == NULL)
+    if (p == NULL || isUndefined(&p->p_child))
         return TRUE;
-    if (isUndefined(&p->p_child))
-        return FALSE;
     return list_empty(&p->p_child);
 }
 
@@ -122,7 +122,7 @@ pcb_t *removeChild(pcb_t *p)
     if (emptyChild(p))
         return NULL;
 
-    pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
+    pcb_PTR tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
 
     outChild(tmp);
 
@@ -134,7 +134,7 @@ pcb_t *outChild(pcb_t *p)
     if (p == NULL || p->p_parent == NULL)
         return NULL;
 
-    list_del(&p->p_sib); /*remove p from the sibling list*/
+    list_del_init(&p->p_sib); /*remove p from the sibling list*/
 
     p->p_parent = NULL;
     return p;
