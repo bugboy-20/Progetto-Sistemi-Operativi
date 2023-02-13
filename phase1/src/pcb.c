@@ -8,7 +8,7 @@ static struct list_head pcbFree_h;
 static pcb_t pcbFree_table[MAXPROC];
 
 /* initialize every pbc's field to 0 or NULL */
-static void definePcb(pcb_PTR p);
+static void definePcb(pcb_t *p);
 /* check if the list_head points to NULL */
 static bool isUndefined(struct list_head *);
 
@@ -16,6 +16,7 @@ void initPcbs()
 {
     INIT_LIST_HEAD(&pcbFree_h);
 
+    // Initialize every process as free
     for (int i = 0; i < MAXPROC; i++)
         list_add(&pcbFree_table[i].p_list, &pcbFree_h);
 }
@@ -25,6 +26,7 @@ void freePcb(pcb_t *p)
     if (p == NULL)
         return;
 
+    // Remove the pcb from active process' list
     if (!isUndefined(&p->p_list))
         list_del_init(&p->p_list);
     list_add(&p->p_list, &pcbFree_h);
@@ -35,11 +37,10 @@ pcb_t *allocPcb()
     if (list_empty(&pcbFree_h))
         return NULL;
 
-    pcb_PTR toBeAllocated = list_first_entry(&pcbFree_h, pcb_t, p_list);
+    // Get first free process
+    pcb_t *toBeAllocated = list_first_entry(&pcbFree_h, pcb_t, p_list);
 
-    if (toBeAllocated == NULL) // probably useless check, list isn't empty
-        return NULL;
-
+    // remove toBeAllocated from free process list
     list_del(&toBeAllocated->p_list);
     definePcb(toBeAllocated);
 
@@ -58,7 +59,8 @@ int emptyProcQ(struct list_head *head)
 
 void insertProcQ(struct list_head *head, pcb_t *p)
 {
-    if (list_empty(head))
+    // If empty initialize list
+    if (emptyProcQ(head))
         INIT_LIST_HEAD(head);
 
     list_add_tail(&p->p_list, head);
@@ -66,8 +68,9 @@ void insertProcQ(struct list_head *head, pcb_t *p)
 
 pcb_t *headProcQ(struct list_head *head)
 {
-    if (list_empty(head))
+    if (emptyProcQ(head))
         return NULL;
+    
     return list_first_entry(head, pcb_t, p_list);
 }
 
@@ -75,9 +78,9 @@ pcb_t *removeProcQ(struct list_head *head)
 {
     if (emptyProcQ(head))
         return NULL;
+    
     pcb_t *tmp = headProcQ(head);
-
-    list_del(head->next);
+    list_del_init(&tmp->p_list);
 
     return tmp;
 }
@@ -87,13 +90,14 @@ pcb_t *outProcQ(struct list_head *head, pcb_t *p)
     if (emptyProcQ(head))
         return NULL;
 
-    struct list_head *tmp;
+    struct pcb_t *tmp;
 
-    list_for_each(tmp, head)
+    // if p found, return it, otherwise return NULL
+    list_for_each_entry(tmp, head, p_list) // Iterate for each PCB in process queue
     {
-        if (tmp == &p->p_list)
+        if (tmp == p)
         {
-            list_del(tmp);
+            list_del_init(&tmp->p_list);
             return p;
         }
     }
@@ -103,18 +107,22 @@ pcb_t *outProcQ(struct list_head *head, pcb_t *p)
 
 int emptyChild(pcb_t *p)
 {
-    if (p == NULL || isUndefined(&p->p_child))
+    if (p == NULL)
         return TRUE;
     return list_empty(&p->p_child);
 }
 
 void insertChild(pcb_t *prnt, pcb_t *p)
 {
-    if (prnt == NULL || p == NULL) /* TODO: devo controllare se ha già un padre?*/
+    if (prnt == NULL || p == NULL)
         return;
 
+    // If p is in another tree, remove the process from there
+    if (p->p_parent != NULL)
+        outChild(p);
+
     p->p_parent = prnt;
-    list_add_tail(&p->p_sib, &prnt->p_child); /* TODO: cosa succede se p ha già dei siblings*/
+    list_add_tail(&p->p_sib, &prnt->p_child);
 }
 
 pcb_t *removeChild(pcb_t *p)
@@ -122,8 +130,8 @@ pcb_t *removeChild(pcb_t *p)
     if (emptyChild(p))
         return NULL;
 
-    pcb_PTR tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
-
+    // Get first sibling from p_sib list from list pointed by p_child of p, then remove it
+    pcb_t *tmp = list_first_entry((&p->p_child), pcb_t, p_sib);
     outChild(tmp);
 
     return tmp;
@@ -134,22 +142,23 @@ pcb_t *outChild(pcb_t *p)
     if (p == NULL || p->p_parent == NULL)
         return NULL;
 
-    list_del_init(&p->p_sib); /*remove p from the sibling list*/
-
+    // Remove p from siblilng list and remove the parent
+    list_del_init(&p->p_sib);
     p->p_parent = NULL;
+
     return p;
 }
 
-static void definePcb(pcb_PTR p)
+static void definePcb(pcb_t *p)
 {
-    /* init pcb */
+    // init pcb
     INIT_LIST_HEAD(&p->p_list);
 
     p->p_parent = NULL;
     INIT_LIST_HEAD(&p->p_child);
     INIT_LIST_HEAD(&p->p_sib);
 
-    /* init state_t */
+    // init state_t
     p->p_s.entry_hi = 0;
     p->p_s.cause = 0;
     p->p_s.status = 0;
@@ -169,8 +178,6 @@ static void definePcb(pcb_PTR p)
 
 static bool isUndefined(struct list_head *l)
 {
-    /* assumo che o sono entrambi NULL o sono entrambi non NULL,
-     * non succede mai che solo uno dei due è NULL
-     */
-    return (l->next == NULL && l->next == NULL);
+    // It never happens that only next or prev is NULL
+    return (l->next == NULL && l->prev == NULL);
 }
