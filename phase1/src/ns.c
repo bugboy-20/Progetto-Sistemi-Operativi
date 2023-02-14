@@ -1,10 +1,8 @@
-
 #ifndef NS_H
 #define NS_H
 
-#include <umps/const.h>
-#include <pandos_const.h>
 #include <pandos_types.h>
+#include "../include/ns.h"
 
 /* namespace matrix, an array for every namespace type(NS_TYPE_MAX) with MAXPROC dimension */
 static nsd_t nsd[NS_TYPE_MAX][MAXPROC];

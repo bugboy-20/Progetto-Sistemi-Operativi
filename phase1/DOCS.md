@@ -16,3 +16,10 @@ Se p appartiene già all'albero allora viene spostato su quello nuovo
 Per eliminare un elemento da una lista utilizziamo sempre `list_del_init` perchè evita di lasciare dei puntatori a NULL. Questo potrebbe generare problemi in caso di utilizzo successivo di `list_empty` e operazioni con puntatori.
 
 L'unica eccezione è in `allocPcb` dove sarebbe inutile perchè utilizziamo `definePcb` subito dopo.
+
+## Implementazione dei namespace
+I namespace non sono stati implementati attraverso array, ma con una matrice di dimensione $\texttt{NS\_TYPE\_MAX} \times \texttt{MAXPROC}$.
+Questa implementazione permette di generalizzare le funzioni dei namespace, rendendole utilizzabili con un qualsiasi numero di tipi.
+
+Anche le liste di namespace liberi e attivi sono state implementate tramite array, 
+permettendo così di accedere direttamente alla lista del tipo specifico, senza avere liste diversi per ogni tipo di namespace
