@@ -23,6 +23,9 @@ Per eliminare un elemento da una lista utilizziamo sempre `list_del_init` perch�
 
 L'unica eccezione è in `allocPcb` dove sarebbe inutile perchè utilizziamo `definePcb` subito dopo.
 
+## Implementazione della ASH
+La ASH ha una dimensione pari alla massima potenza minore di MAXPROC, questo permette di avere una ASH senza aree sicuramente inutilizzate e allo stesso tempo ogni SEMD è ragiungibilile in al più due iterazioni.
+
 ## Implementazione dei namespace
 I namespace non sono stati implementati attraverso array, ma con una matrice di dimensione $\texttt{NS\_TYPE\_MAX} \times \texttt{MAXPROC}$.
 Questa implementazione permette di generalizzare le funzioni dei namespace, rendendole utilizzabili con un qualsiasi numero di tipi.
