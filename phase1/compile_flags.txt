@@ -1,4 +1,0 @@
--I
-../include
--I
-/usr/include/umps3
