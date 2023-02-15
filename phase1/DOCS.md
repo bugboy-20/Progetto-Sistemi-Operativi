@@ -1,16 +1,22 @@
 # Documentazione progetto SO fase 1
 
 ## Controlli ridondanti o non richiesti
-Abbiamo deciso di fare un controllo solo in alcuni casi nonostante non fosse necessario con un utilizzo corretto dei metodi
+Abbiamo deciso di fare un controllo solo in alcuni casi nonostante non fosse necessario con un utilizzo corretto dei metodi.
 
 ### `freePcb`
-Eliminiamo il PCB da una precedente lista facendo attenzione che i puntatori prev e next di p_list non siano NULL
+Eliminiamo il PCB da una precedente lista facendo attenzione che i puntatori prev e next di p_list non siano NULL.
 
 ### `insertProcQ`
-Se la lista è vuota la inizializziamo prima di inserirci un nuovo elemento
+Se la lista è vuota la inizializziamo prima di inserirci un nuovo elemento.
 
 ### `insertChild`
-Se p appartiene già all'albero allora viene spostato su quello nuovo
+Se p appartiene già all'albero allora viene spostato su quello nuovo.
+
+### `outBlocked`
+In caso p sia nullo viene ritornato nullo.
+
+### `headBlocked`
+semAdd può essere sia un valore nullo che invalido senza causare comportamenti inaspettati.
 
 ## Utilizzo di `list_del_init`
 Per eliminare un elemento da una lista utilizziamo sempre `list_del_init` perchè evita di lasciare dei puntatori a NULL. Questo potrebbe generare problemi in caso di utilizzo successivo di `list_empty` e operazioni con puntatori.
