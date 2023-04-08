@@ -1,12 +1,7 @@
 #include "../include/syscall.h"
 #include <pcb.h>
 #include <ash.h>
-
-HIDDEN void terminate_recursively(pcb_t *proc);
-HIDDEN pcb_t *get_proc_by_pid(int pid);
-// TODO: da togliere e sotituire con una variabile globale
-HIDDEN pcb_t *processo_attuale;
-HIDDEN struct list_head *readyQ;
+#include <TODO.h>
 
 int create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 {
