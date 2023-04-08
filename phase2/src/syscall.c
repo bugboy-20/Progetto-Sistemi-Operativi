@@ -38,15 +38,19 @@ void terminate_process(int pid)
     }
     pcb_t *dead_proc = get_proc_by_pid(pid);
     terminate_recursively(dead_proc);
+
+    scheduler();
 }
 
+// questa syscall e` bloccante, capitolo 3.5.11
 void passeren(int *semAddr)
 {
-    bool res = insertBlocked(semAddr, processo_attuale);
-    if (res)
+    bool failure = insertBlocked(semAddr, processo_attuale);
+    if (!failure)
     {
-        // TODO: inserisco il processo nelle coda dei bloccati
+        // TODO: inserisco il processo nelle coda dei bloccati?
         // TODO: chiamo lo scheduler
+        scheduler();
     }
     else
     {
@@ -60,13 +64,17 @@ void verhogen(int *semAddr)
     // TODO: forse devo fare operazioni/controlli in più?
 }
 
+// questa syscall e` bloccante, capitolo 3.5.11
 int do_io(int *cmdAddr, int *cmdValues)
 {
+    // istruzione nella slide non chiare e manuale non aggiornato
+    // non so come implementarla
     return -1;
 }
 
 int get_cpu_time();
 
+// questa syscall e` bloccante, capitolo 3.5.11
 int wait_for_clock();
 
 struct support_t *get_support_data();

@@ -10,6 +10,11 @@
 
 int SYSCALL(int a0, void *a1, void *a2, void *a3)
 {
+    /** controllare se siamo in kernel mode,
+     * se no e` necessario lanciare una trap
+     * inoltre se il processo usa un codice non valido deve essere terminato
+     * capitolo 3.5.9 e 3.7
+     */
     switch (a0)
     {
     // Pische
@@ -38,8 +43,13 @@ int SYSCALL(int a0, void *a1, void *a2, void *a3)
     case GET_CHILDREN:
         return get_children((int *)a1, *(int *)a2);
     default:
+        // TODO: terminare il processo che ha fatto la syscall sbagliata
         return -1;
     }
+    /**
+     * prima di terminare dovrei aumentare il valore del PC di 4
+     * capitolo 3.5.10 del manuale
+     */
     // ho assunto che il valore di ritorno per le syscall void sia 0
     return 0;
 }
