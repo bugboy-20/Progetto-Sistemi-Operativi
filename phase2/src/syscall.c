@@ -9,12 +9,10 @@ int create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
     if (new_proc == NULL)
         return -1;
 
-    // TODO: se ns è NULL dovrei usare il namespace del padre
-    if (ns == NULL)
-        ns = processo_attuale->namespaces[NS_PID];
-
     // TODO: aggiungere la struttura di supporto al pcb
-    // TODO: aggiungere il pid nel pcb
+    // new_proc.p_supportStruct = supportp;
+    // TODO: aggiungere il pid nel pcb, uso l'indirizzo del pcb
+    // new_proc.p_pid = new_proc;
 
     new_proc->p_s = *statep;
     new_proc->p_time = 0;
@@ -25,6 +23,14 @@ int create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 
     // TODO: bisogna rendere new_proc come figlio del chiamante
     insertChild(processo_attuale, new_proc);
+
+    // TODO: se ns è NULL dovrei usare il namespace del padre
+    if (ns == NULL)
+        ns = processo_attuale->namespaces[NS_PID];
+    new_proc->namespaces[NS_PID] = ns;
+
+    // TODO: incrementare il counter dei processi attuali
+    // proc_count+=1;
     return 0;
 }
 
@@ -45,30 +51,72 @@ void terminate_process(int pid)
 // questa syscall e` bloccante, capitolo 3.5.11
 void passeren(int *semAddr)
 {
-    bool failure = insertBlocked(semAddr, processo_attuale);
-    if (!failure)
+    // current process goes from running to blocked
+    if (*semAddr == 0)
     {
-        // TODO: inserisco il processo nelle coda dei bloccati?
-        // TODO: chiamo lo scheduler
+        insertBlocked(semAddr, processo_attuale);
+        processo_attuale == NULL;
+        // TODO: incrementare il counter dei processi bloccati
+        //  schedule the next process
         scheduler();
     }
+    // unblock the first blocked process
     else
     {
-        // TODO: lascio il controllo al processo corrente
+        pcb_t *proc = removeBlocked(semAddr);
+        if (proc == NULL)
+        {
+            // no proc is blocked, resource given to current proc
+            (*semAddr) -= 1;
+        }
+        else
+        {
+            insertProcQ(readyQ, proc);
+            // TODO: decrementare il counter dei processi bloccati
+        }
     }
 }
 
 void verhogen(int *semAddr)
 {
-    pcb_t *proc = removeBlocked(semAddr);
-    // TODO: forse devo fare operazioni/controlli in più?
+    if ((*semAddr) = 1)
+    {
+        // la V non si può fare se il sem è a 1
+        insertBlocked(semAddr, processo_attuale);
+        processo_attuale == NULL;
+        // TODO: incrementare il counter dei processi bloccati
+        //  schedule the next process
+        scheduler();
+    }
+    else
+    {
+        pcb_t *proc = removeBlocked(semAddr);
+        if (proc == NULL)
+        {
+            // no proc is blocked, resource given to current proc
+            (*semAddr) += 1;
+        }
+        else
+        {
+            insertProcQ(readyQ, proc);
+            // TODO: decrementare il counter dei processi bloccati
+        }
+    }
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
 int do_io(int *cmdAddr, int *cmdValues)
 {
-    // istruzione nella slide non chiare e manuale non aggiornato
-    // non so come implementarla
+    // istruzioni non chiare, non so come implementarla
+
+    // la richiesta di IO blocca sempre il processo
+    // TODO: capire qual'è il semaforo sul quale il processo deve bloccarsi
+    // insertBlocked(..., processo_attuale);
+    processo_attuale == NULL;
+    scheduler();
+
+    // TODO: capire se questa è l'operazione giusta da fare
+    (*cmdAddr) = cmdValues;
     return -1;
 }
 
