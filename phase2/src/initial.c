@@ -3,15 +3,12 @@
 #include "../include/ash.h"
 #include "../include/pcb.h"
 #include "../include/ns.h"
+#include "../include/initial.h"
 #include "list.h"
 #include "pandos_const.h"
+#include "pandos_types.h"
+#include <umps/const.h>
 
-typedef struct{} sem; //TODO
-
-static int alive_proc;
-static int blocked_proc;
-static LIST_HEAD(ready_q);
-static sem sem_l[MAXPROC];
 
 int main() {
     // Inizializzazione delle seguenti variabili
@@ -30,16 +27,14 @@ int main() {
     // Popolare il pass up vector con getore e stack pointer per eccezioni e TLB-Refill
 
     // Caricare l'Interval Timer
-    alive_proc=0;
-    blocked_proc=0;
+    process_count=0;
+    soft_block_count=0;
 
     initPcbs();
     initASH();
     initNamespaces();
 
-    //TODO quando escono le specifiche si capirà me va fatto
-    int* intervaltmr = (int*) INTERVALTMR;
-    *intervaltmr=100;
+    LDIT(100);
 
     // INIZIALIZZAZIONE SCHEDULER
 
