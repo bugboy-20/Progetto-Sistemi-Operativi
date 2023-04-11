@@ -2,8 +2,8 @@
 #include <exceptions.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
-#include "syscall.h"
-#include <cp0.h>
+#include <syscall.h>
+#include <umps3/umps/cp0.h>
 
 // costanti temporanee
 // finchè non abbiamo i file del prof
