@@ -1,4 +1,4 @@
-#include "../include/ash.h"
+#include "ash.h"
 #include <hashtable.h>
 
 static semd_t semd_table[MAXPROC];

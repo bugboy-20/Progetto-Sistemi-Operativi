@@ -2,8 +2,8 @@ PREFIX = mipsel-linux-gnu-
 CC = $(PREFIX)gcc
 LD = $(PREFIX)ld
 
-UDIR = /usr/include/umps3
-SDIR = /usr/share/umps3
+UDIR = /usr/include
+SDIR = /usr/share
 PANDOS_HEADERS = ../include
 SOURCE = src
 BUILD = build

@@ -1,7 +1,7 @@
 #ifndef ASH_H
 #define ASH_H
 
-#include <pandos_types.h>
+#include "pandos_types.h"
 
 /**
  * Viene inserito il PCB puntato da p nella coda dei processi bloccati associata al SEMD con chiave semAdd.

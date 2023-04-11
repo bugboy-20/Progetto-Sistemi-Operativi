@@ -1,12 +1,18 @@
 // Parte di Pische e Michele
 #include <exceptions.h>
 #include <pandos_const.h>
-#include "../include/syscall.h"
+#include <pandos_types.h>
+#include "syscall.h"
 
 // costanti temporanee
 // finchè non abbiamo i file del prof
 #define GETPROCESSID 9
 #define GET_CHILDREN 10
+
+memaddr exceptionHandler()
+{
+    // TODO
+}
 
 int SYSCALL(int a0, void *a1, void *a2, void *a3)
 {

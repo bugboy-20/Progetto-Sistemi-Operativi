@@ -1,6 +1,4 @@
-#include <pandos_types.h>
-// definizione temporanea
-struct support_t; 
+#include "pandos_types.h"
 
 // SYS1
 int create_process(state_t *, struct support_t *, nsd_t *);

@@ -2,7 +2,7 @@
 #define NS_H
 
 #include <pandos_types.h>
-#include "../include/ns.h"
+#include "ns.h"
 
 /* namespace matrix, an array for every namespace type(NS_TYPE_MAX) with MAXPROC dimension */
 static nsd_t nsd[NS_TYPE_MAX][MAXPROC];

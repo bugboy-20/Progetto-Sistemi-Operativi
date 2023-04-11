@@ -1,6 +1,6 @@
 #include <pandos_const.h>
 #include <list.h>
-#include "../include/pcb.h"
+#include "pcb.h"
 
 /* free pcb list */
 static struct list_head pcbFree_h;

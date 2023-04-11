@@ -1,4 +1,4 @@
-#include "../include/syscall.h"
+#include "syscall.h"
 #include <pcb.h>
 #include <ash.h>
 #include <TODO.h>
