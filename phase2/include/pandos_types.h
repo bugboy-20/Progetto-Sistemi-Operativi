@@ -7,7 +7,7 @@
  *
  ****************************************************************************/
 
-#include <umps/types.h>
+#include <umps3/umps/types.h>
 #include "pandos_const.h"
 #include <list.h>
 
@@ -20,6 +20,24 @@
 typedef signed int   cpu_t;
 typedef unsigned int memaddr;
 
+/* process context */
+typedef struct context_t {
+    /* process context fields */
+    unsigned int c_stackPtr, /* stack pointer value */
+    c_status, /* status reg value */
+    c_pc; /* PC address */
+} context_t;
+
+typedef struct support_t {
+    int sup_asid; /* Process Id (asid) */
+    state_t sup_exceptState[2]; /* stored excpt states */
+    context_t sup_exceptContext[2]; /* pass up contexts */
+    // ... other fields to be added later
+} support_t;
+
+/* Exceptions related constants */
+#define PGFAULTEXCEPT 0
+#define GENERALEXCEPT 1
 
 typedef struct nsd_t {
     /* Namespace type */
@@ -48,6 +66,9 @@ typedef struct pcb_t {
 
     /* Namespace list */
     nsd_t *namespaces[NS_TYPE_MAX];
+
+    /* Support structure */
+    support_t *p_supportStruct;
 } pcb_t, *pcb_PTR;
 
 
