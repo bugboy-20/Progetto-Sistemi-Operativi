@@ -1,16 +1,10 @@
-// Parte di Pische e Michele
 #include <exceptions.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
 #include <syscall.h>
 #include <umps3/umps/cp0.h>
 
-// costanti temporanee
-// finchè non abbiamo i file del prof
-#define GETPROCESSID 9
-#define GET_CHILDREN 10
-
-memaddr exceptionHandler()
+void exception_handler()
 {
     state_t *state = BIOSDATAPAGE;
     const int exception_code = CAUSE_GET_EXCCODE(state->cause);
@@ -47,12 +41,11 @@ memaddr exceptionHandler()
     return 0;
 }
 
-int SYSCALL(int a0, void *a1, void *a2, void *a3)
+void syscall_handler(int a0, void *a1, void *a2, void *a3)
 {
     state_t *state = BIOSDATAPAGE;
-    int *KUp = (state->status & STATUS_KUp) >> STATUS_KUp_BIT;
 
-    if (KUp == 1)
+    if ((state->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
         // process is in user mode
         // clean cause.ExcCode
@@ -105,5 +98,10 @@ int SYSCALL(int a0, void *a1, void *a2, void *a3)
     // ho assunto che il valore di ritorno per le syscall void sia 0
 
     state->pc_epc += WORDLEN;
+    return 0;
+}
+
+void pass_up_or_die()
+{
     return 0;
 }

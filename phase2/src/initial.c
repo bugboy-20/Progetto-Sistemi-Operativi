@@ -18,7 +18,7 @@ int main() {
     pass_up_vector = (passupvector_t*) PASSUPVECTOR;
     pass_up_vector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     pass_up_vector->tlb_refill_stackPtr = (memaddr) KERNELSTACK;
-    pass_up_vector->exception_handler = (memaddr) exceptionHandler;
+    pass_up_vector->exception_handler = (memaddr) exception_handler;
     pass_up_vector->exception_stackPtr = (memaddr) KERNELSTACK;
 
     // Initialize Phase 2 data structures

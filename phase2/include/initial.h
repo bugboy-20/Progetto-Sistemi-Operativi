@@ -9,6 +9,6 @@ int process_count;
 int soft_block_count;
 pcb_PTR current_proc;
 struct list_head* ready_q;
-sem_t sem_table[MAXPROC];
+sem_t sem_table[DEVICECNT];
 
 #endif //INITIAL_H

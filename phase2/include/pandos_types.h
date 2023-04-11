@@ -69,6 +69,9 @@ typedef struct pcb_t {
 
     /* Support structure */
     support_t *p_supportStruct;
+
+    /* Process ID */
+    unsigned int p_pid;
 } pcb_t, *pcb_PTR;
 
 
