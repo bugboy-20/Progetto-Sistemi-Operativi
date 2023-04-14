@@ -4,7 +4,7 @@ LD = $(PREFIX)ld
 
 UDIR = /usr/include/umps3
 SDIR = /usr/share/umps3
-PANDOS_HEADERS = ../include
+PANDOS_HEADERS = ./include
 SOURCE = src
 BUILD = build
 CFLAGS = -ffreestanding -ansi -mips1 -mabi=32 -std=gnu99 -mno-gpopt -EL -G 0 -mno-abicalls -fno-pic -mfp32 -I$(UDIR) -I$(PANDOS_HEADERS) -Wall -O0
