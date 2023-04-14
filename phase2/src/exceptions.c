@@ -1,8 +1,10 @@
 #include <exceptions.h>
+#include <initial.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
-#include <syscall.h>
+#include <include/syscall.h>
 #include <umps3/umps/cp0.h>
+#include <umps3/umps/libumps.h>
 
 void exception_handler()
 {
@@ -13,29 +15,34 @@ void exception_handler()
     {
     case EXC_INT:
         // TODO: chiamare l'interrupt handler
+        interrupt_handler();
         break;
     case EXC_MOD:
     case EXC_TLBL:
     case EXC_TLBS:
-        // TODO: chiamare tlb exception handler
+        // call to tlb exception handler
+        pass_up_or_die(PGFAULTEXCEPT);
         break;
 
-    case EXC_ADEL:
-    case EXC_ADES:
-    case EXC_IBE:
-    case EXC_DBE:
-    case EXC_BP:
-    case EXC_RI:
-    case EXC_CPU:
-    case EXC_OV:
-        // TODO: chiamare program trap exception handler
-        break;
+        // case EXC_ADEL:
+        // case EXC_ADES:
+        // case EXC_IBE:
+        // case EXC_DBE:
+        // case EXC_BP:
+        // case EXC_RI:
+        // case EXC_CPU:
+        // case EXC_OV:
+        //     pass_up_or_die(GENERALEXCEPT);
+        //     break;
 
     case EXC_SYS:
-        // TODO: chiamare il syscall excpetion handler
+        // call to syscall excpetion handler
+        syscall_handler(state->reg_a0, state->reg_a1, state->reg_a2, state->reg_a3);
         break;
 
     default:
+        // call to program trap exception handler or else
+        pass_up_or_die(GENERALEXCEPT);
         break;
     }
     return 0;
@@ -47,12 +54,12 @@ void syscall_handler(int a0, void *a1, void *a2, void *a3)
 
     if ((state->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
-        // process is in user mode
+        // process is in user mode then trigger program trap exception
         // clean cause.ExcCode
         state->cause &= ~CAUSE_EXCCODE_MASK;
         // set the ExcCode to Reserved Instruction
         state->cause |= EXC_RI << CAUSE_EXCCODE_BIT;
-        // TODO: chiamata al trap handler
+        pass_up_or_die(GENERALEXCEPT);
         return;
     }
     /** controllare se siamo in kernel mode,
@@ -64,7 +71,8 @@ void syscall_handler(int a0, void *a1, void *a2, void *a3)
     {
     // Pische
     case CREATEPROCESS:
-        return create_process((state_t *)a1, (struct support_t *)a2, (nsd_t *)a3);
+        create_process((state_t *)a1, (struct support_t *)a2, (nsd_t *)a3);
+        break;
     case TERMPROCESS:
         terminate_process(*(int *)a1);
         break;
@@ -75,33 +83,41 @@ void syscall_handler(int a0, void *a1, void *a2, void *a3)
         verhogen((int *)a1);
         break;
     case IOWAIT:
-        return do_io((int *)a1, (int *)a2);
+        do_io((int *)a1, (int *)a2);
+        break;
     // Michele
     case GETTIME:
-        return get_cpu_time();
+        get_cpu_time();
+        break;
     case CLOCKWAIT:
-        return wait_for_clock();
+        wait_for_clock();
+        break;
     case GETSUPPORTPTR:
-        return get_support_data();
+        get_support_data();
+        break;
     case GETPROCESSID:
-        return get_process_id(*(int *)a1);
+        get_process_id(*(bool *)a1);
+        break;
     case GET_CHILDREN:
-        return get_children((int *)a1, *(int *)a2);
+        get_children((int *)a1, *(int *)a2);
+        break;
     default:
-        // TODO: terminare il processo che ha fatto la syscall sbagliata
-        return -1;
+        pass_up_or_die(GENERALEXCEPT);
+        break;
     }
-    /**
-     * prima di terminare dovrei aumentare il valore del PC di 4
-     * capitolo 3.5.10 del manuale
-     */
-    // ho assunto che il valore di ritorno per le syscall void sia 0
-
-    state->pc_epc += WORDLEN;
-    return 0;
 }
 
-void pass_up_or_die()
+void pass_up_or_die(int exep_code)
 {
-    return 0;
+    if (current_proc->p_supportStruct == NULL)
+    {
+        terminate_process(current_proc->p_pid);
+    }
+    else
+    {
+        state_t *state = BIOSDATAPAGE;
+        current_proc->p_supportStruct->sup_exceptState[exep_code] = *state;
+        context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
+        LDCXT(exep_context.c_stackPtr, exep_context.c_status, exep_context.c_pc);
+    }
 }

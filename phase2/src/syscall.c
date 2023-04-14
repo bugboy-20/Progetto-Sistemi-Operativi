@@ -1,46 +1,50 @@
-#include "syscall.h"
+#include <include/syscall.h>
+#include <umps3/umps/libumps.h>
 #include <types.h>
 #include <pcb.h>
 #include <ash.h>
 #include <initial.h>
 #include <TODO.h>
 
-int create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
+HIDDEN void terminate_recursively(pcb_t *);
+HIDDEN void syscall_end(bool terminated, bool blocking);
+HIDDEN pcb_t *get_proc(int pid);
+
+void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 {
+    state_t *state = BIOSDATAPAGE;
     pcb_t *new_proc = allocPcb();
     if (new_proc == NULL)
     {
-        current_proc->p_s.reg_v0 = -1;
-        return -1;
+        state->reg_v0 = -1;
+        return;
     }
 
-    // TODO: aggiungere la struttura di supporto al pcb
-    // new_proc.p_supportStruct = supportp;
-    // TODO: aggiungere il pid nel pcb, uso l'indirizzo del pcb
-    // new_proc.p_pid = new_proc;
+    new_proc->p_supportStruct = supportp;
+    // pid is the address of the pcb itself
+    new_proc->p_pid = new_proc;
 
     new_proc->p_s = *statep;
     new_proc->p_time = 0;
     new_proc->p_semAdd = NULL;
 
-    // inserire il pbc nella ready queue
+    // insert new process into the reade queue
     insertProcQ(&ready_q, new_proc);
 
-    // bisogna rendere new_proc come figlio del chiamante
+    // new process is the progeny of the caller
     insertChild(current_proc, new_proc);
 
-    //  se ns è NULL dovrei usare il namespace del padre
+    // se ns è NULL dovrei usare il namespace del padre
     if (ns == NULL)
         ns = current_proc->namespaces[NS_PID];
     new_proc->namespaces[NS_PID] = ns;
 
-    // TODO: incrementare il counter dei processi attuali
     process_count += 1;
 
     // TODO: metti il pid nel registro v0
-    // current_proc->p_s.reg_v0 = new_proc.p_pid;
+    state->reg_v0 = new_proc->p_pid;
 
-    return 0;
+    syscall_end(false, false);
 }
 
 void terminate_process(int pid)
@@ -49,12 +53,13 @@ void terminate_process(int pid)
     {
         // termino il processo corrente e tutta la sua progenie
         terminate_recursively(current_proc);
+        syscall_end(true, false);
         return;
     }
-    pcb_t *dead_proc = get_proc_by_pid(pid);
+    pcb_t *dead_proc = get_proc(pid);
     terminate_recursively(dead_proc);
 
-    scheduler();
+    syscall_end(false, false);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
@@ -67,7 +72,7 @@ void passeren(int *semAddr)
         current_proc == NULL;
         // TODO: incrementare il counter dei processi bloccati
         //  schedule the next process
-        scheduler();
+        syscall_end(false, true);
     }
     // unblock the first blocked process
     else
@@ -77,11 +82,13 @@ void passeren(int *semAddr)
         {
             // no proc is blocked, resource given to current proc
             (*semAddr) -= 1;
+            syscall_end(false, false);
         }
         else
         {
             insertProcQ(&ready_q, proc);
             // TODO: decrementare il counter dei processi bloccati
+            syscall_end(false, true);
         }
     }
 }
@@ -95,7 +102,7 @@ void verhogen(int *semAddr)
         current_proc == NULL;
         // TODO: incrementare il counter dei processi bloccati
         //  schedule the next process
-        scheduler();
+        syscall_end(false, true);
     }
     else
     {
@@ -114,7 +121,7 @@ void verhogen(int *semAddr)
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
-int do_io(int *cmdAddr, int *cmdValues)
+void do_io(int *cmdAddr, int *cmdValues)
 {
     // istruzioni non chiare, non so come implementarla
 
@@ -126,16 +133,87 @@ int do_io(int *cmdAddr, int *cmdValues)
 
     // TODO: capire se questa è l'operazione giusta da fare
     (*cmdAddr) = cmdValues;
-    return -1;
 }
 
-int get_cpu_time();
+void get_cpu_time() {}
 
 // questa syscall e` bloccante, capitolo 3.5.11
-int wait_for_clock();
+void wait_for_clock() {}
 
-struct support_t *get_support_data();
+void get_support_data() {}
 
-int get_process_id(int parent);
+void get_process_id(bool parent) {}
 
-int get_children(int *children, int size);
+void get_children(int *children, int size) {}
+
+HIDDEN void syscall_end(bool terminated, bool blocking)
+{
+    if (terminated)
+    {
+        scheduler();
+        return;
+    }
+    state_t *state = BIOSDATAPAGE;
+
+    state->pc_epc += WORDLEN;
+    if (blocking)
+    {
+        // TODO: verificare se l'assegnamento effettua una copia vera e propria
+        current_proc->p_s = *state;
+        // TODO: aggiornare il CPU time per il processo corrente
+        // TODO: capire come fare a fare la transition da uno stato ready a blocked
+        scheduler();
+    }
+    else
+    {
+        LDST(state);
+        // TODO: capire se devo chiamare lo scheduler
+    }
+}
+
+HIDDEN void terminate_recursively(pcb_t *proc)
+{
+    /**
+     * manuale al capitolo 3.9
+     */
+    outChild(proc);
+
+    // TODO: incrementare il semaforo giusto se necessario
+
+    process_count -= 1;
+
+    if (proc == current_proc)
+    {
+        // running state, don't have to do anything (?)
+    }
+    else if (outProcQ(ready_q, proc) == NULL) // ready state
+    {
+        // blocked state
+        outBlocked(proc);
+        // TOOD: aggiustare il soft-block count se necessario
+        soft_block_count -= 1;
+    }
+
+    struct pcb_t *tmp;
+
+    list_for_each_entry(tmp, &proc->p_child, p_sib)
+    {
+        terminate_recursively(tmp);
+    }
+}
+
+HIDDEN pcb_t *get_proc(int pid)
+{
+    if (current_proc->p_pid == pid)
+        return current_proc;
+
+    struct pcb_t *tmp;
+
+    list_for_each_entry(tmp, ready_q, p_list)
+    {
+        if (tmp->p_pid == pid)
+        {
+            return tmp;
+        }
+    }
+}
