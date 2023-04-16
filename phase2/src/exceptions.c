@@ -1,14 +1,15 @@
 #include <exceptions.h>
 #include <initial.h>
+#include <interrupts.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
-#include <include/syscall.h>
+#include "../include/syscall.h"
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 
 void exception_handler()
 {
-    state_t *state = BIOSDATAPAGE;
+    state_t *state = (state_t *)(state_t *)BIOSDATAPAGE;
     const int exception_code = CAUSE_GET_EXCCODE(state->cause);
 
     switch (exception_code)
@@ -37,7 +38,7 @@ void exception_handler()
 
     case EXC_SYS:
         // call to syscall excpetion handler
-        syscall_handler(state->reg_a0, state->reg_a1, state->reg_a2, state->reg_a3);
+        syscall_handler(state->reg_a0, &state->reg_a1, &state->reg_a2, &state->reg_a3);
         break;
 
     default:
@@ -45,12 +46,11 @@ void exception_handler()
         pass_up_or_die(GENERALEXCEPT);
         break;
     }
-    return 0;
 }
 
 void syscall_handler(int a0, void *a1, void *a2, void *a3)
 {
-    state_t *state = BIOSDATAPAGE;
+    state_t *state = (state_t *)BIOSDATAPAGE;
 
     if ((state->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
@@ -82,7 +82,7 @@ void syscall_handler(int a0, void *a1, void *a2, void *a3)
     case VERHOGEN:
         verhogen((int *)a1);
         break;
-    case IOWAIT:
+    case DOIO:
         do_io((int *)a1, (int *)a2);
         break;
     // Michele
@@ -98,7 +98,7 @@ void syscall_handler(int a0, void *a1, void *a2, void *a3)
     case GETPROCESSID:
         get_process_id(*(bool *)a1);
         break;
-    case GET_CHILDREN:
+    case GETCHILDREN:
         get_children((int *)a1, *(int *)a2);
         break;
     default:
@@ -115,9 +115,9 @@ void pass_up_or_die(int exep_code)
     }
     else
     {
-        state_t *state = BIOSDATAPAGE;
-        current_proc->p_supportStruct->sup_exceptState[exep_code] = *state;
+        state_t *state = (state_t *)BIOSDATAPAGE;
+        // current_proc->p_supportStruct->sup_exceptState[exep_code] = *state;
         context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
-        LDCXT(exep_context.c_stackPtr, exep_context.c_status, exep_context.c_pc);
+        LDCXT(exep_context.stackPtr, exep_context.status, exep_context.pc);
     }
 }

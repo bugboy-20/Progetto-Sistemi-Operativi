@@ -1,14 +1,14 @@
 #ifndef INITIAL_H
 #define INITIAL_H
-#include "pandos_types.h"
+#include <pandos_types.h>
 
 typedef struct{} sem_t; //TODO
 
-passupvector_t* pass_up_vector;
-int process_count;
-int soft_block_count;
-pcb_PTR current_proc;
-struct list_head* ready_q;
-sem_t sem_table[DEVICECNT];
+extern passupvector_t* pass_up_vector;
+extern int process_count;
+extern int soft_block_count;
+extern pcb_PTR current_proc;
+extern struct list_head* ready_q;
+extern sem_t sem_table[DEVICECNT];
 
 #endif //INITIAL_H

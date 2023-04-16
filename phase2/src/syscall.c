@@ -1,10 +1,10 @@
-#include <include/syscall.h>
+#include "../include/syscall.h"
 #include <umps3/umps/libumps.h>
 #include <types.h>
 #include <pcb.h>
 #include <ash.h>
 #include <initial.h>
-#include <TODO.h>
+#include <scheduler.h>
 
 HIDDEN void terminate_recursively(pcb_t *);
 HIDDEN void syscall_end(bool terminated, bool blocking);
@@ -12,7 +12,7 @@ HIDDEN pcb_t *get_proc(int pid);
 
 void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 {
-    state_t *state = BIOSDATAPAGE;
+    state_t *state = (state_t *)BIOSDATAPAGE;
     pcb_t *new_proc = allocPcb();
     if (new_proc == NULL)
     {
@@ -22,14 +22,14 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 
     new_proc->p_supportStruct = supportp;
     // pid is the address of the pcb itself
-    new_proc->p_pid = new_proc;
+    new_proc->p_pid = (unsigned int)new_proc;
 
-    new_proc->p_s = *statep;
+    // new_proc->p_s = *statep;
     new_proc->p_time = 0;
     new_proc->p_semAdd = NULL;
 
     // insert new process into the reade queue
-    insertProcQ(&ready_q, new_proc);
+    insertProcQ(ready_q, new_proc);
 
     // new process is the progeny of the caller
     insertChild(current_proc, new_proc);
@@ -86,7 +86,7 @@ void passeren(int *semAddr)
         }
         else
         {
-            insertProcQ(&ready_q, proc);
+            insertProcQ(ready_q, proc);
             // TODO: decrementare il counter dei processi bloccati
             syscall_end(false, true);
         }
@@ -95,7 +95,7 @@ void passeren(int *semAddr)
 
 void verhogen(int *semAddr)
 {
-    if ((*semAddr) = 1)
+    if (*semAddr = 1)
     {
         // la V non si può fare se il sem è a 1
         insertBlocked(semAddr, current_proc);
@@ -114,7 +114,7 @@ void verhogen(int *semAddr)
         }
         else
         {
-            insertProcQ(&ready_q, proc);
+            insertProcQ(ready_q, proc);
             // TODO: decrementare il counter dei processi bloccati
         }
     }
@@ -132,7 +132,7 @@ void do_io(int *cmdAddr, int *cmdValues)
     scheduler();
 
     // TODO: capire se questa è l'operazione giusta da fare
-    (*cmdAddr) = cmdValues;
+    cmdAddr = cmdValues;
 }
 
 void get_cpu_time() {}
@@ -153,13 +153,13 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
         scheduler();
         return;
     }
-    state_t *state = BIOSDATAPAGE;
+    state_t *state = (state_t *)BIOSDATAPAGE;
 
     state->pc_epc += WORDLEN;
     if (blocking)
     {
         // TODO: verificare se l'assegnamento effettua una copia vera e propria
-        current_proc->p_s = *state;
+        // current_proc->p_s = *state;
         // TODO: aggiornare il CPU time per il processo corrente
         // TODO: capire come fare a fare la transition da uno stato ready a blocked
         scheduler();
@@ -176,6 +176,8 @@ HIDDEN void terminate_recursively(pcb_t *proc)
     /**
      * manuale al capitolo 3.9
      */
+    if (proc == NULL)
+        return;
     outChild(proc);
 
     // TODO: incrementare il semaforo giusto se necessario
@@ -216,4 +218,5 @@ HIDDEN pcb_t *get_proc(int pid)
             return tmp;
         }
     }
+    return NULL;
 }

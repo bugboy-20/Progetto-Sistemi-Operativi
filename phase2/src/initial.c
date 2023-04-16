@@ -1,17 +1,21 @@
-#include "ash.h"
-#include "pcb.h"
-#include "ns.h"
-#include "initial.h"
-#include "scheduler.h"
-#include "exceptions.h"
-#include "list.h"
-#include "pandos_const.h"
-#include "pandos_types.h"
-#include <umps3/umps/const.h>
+#include <ash.h>
+#include <pcb.h>
+#include <ns.h>
+#include <initial.h>
+#include <scheduler.h>
+#include <exceptions.h>
+#include <list.h>
 #include <umps3/umps/libumps.h>
 
 extern void test();
 extern void uTLB_RefillHandler();
+
+passupvector_t* pass_up_vector;
+int process_count;
+int soft_block_count;
+pcb_PTR current_proc;
+struct list_head* ready_q;
+sem_t sem_table[DEVICECNT];
 
 int main() {
     // Inizialize the Pass Up Vector

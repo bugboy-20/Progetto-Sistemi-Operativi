@@ -48,12 +48,12 @@
 #define TERMPROCESS   2
 #define PASSEREN      3
 #define VERHOGEN      4
-#define IOWAIT        5
+#define DOIO          5
 #define GETTIME       6
 #define CLOCKWAIT     7
 #define GETSUPPORTPTR 8
 #define GETPROCESSID  9
-#define GET_CHILDREN  10
+#define GETCHILDREN   10
 #define WRITEPRINTER  11
 #define WRITETERMINAL 12
 #define READTERMINAL  13

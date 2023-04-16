@@ -23,9 +23,9 @@ typedef unsigned int memaddr;
 /* process context */
 typedef struct context_t {
     /* process context fields */
-    unsigned int c_stackPtr, /* stack pointer value */
-    c_status, /* status reg value */
-    c_pc; /* PC address */
+    unsigned int stackPtr, /* stack pointer value */
+    status, /* status reg value */
+    pc; /* PC address */
 } context_t;
 
 typedef struct support_t {
