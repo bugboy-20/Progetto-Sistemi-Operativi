@@ -9,8 +9,7 @@
 
 void exception_handler()
 {
-    state_t *state = (state_t *)(state_t *)BIOSDATAPAGE;
-    const int exception_code = CAUSE_GET_EXCCODE(state->cause);
+    const int exception_code = CAUSE_GET_EXCCODE(EXCEPTION_STATE->cause);
 
     switch (exception_code)
     {
@@ -38,7 +37,7 @@ void exception_handler()
 
     case EXC_SYS:
         // call to syscall excpetion handler
-        syscall_handler(state->reg_a0, &state->reg_a1, &state->reg_a2, &state->reg_a3);
+        syscall_handler(EXCEPTION_STATE->reg_a0, &EXCEPTION_STATE->reg_a1, &EXCEPTION_STATE->reg_a2, &EXCEPTION_STATE->reg_a3);
         break;
 
     default:
@@ -50,15 +49,14 @@ void exception_handler()
 
 void syscall_handler(int a0, void *a1, void *a2, void *a3)
 {
-    state_t *state = (state_t *)BIOSDATAPAGE;
 
-    if ((state->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
+    if ((EXCEPTION_STATE->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
         // process is in user mode then trigger program trap exception
         // clean cause.ExcCode
-        state->cause &= ~CAUSE_EXCCODE_MASK;
+        EXCEPTION_STATE->cause &= ~CAUSE_EXCCODE_MASK;
         // set the ExcCode to Reserved Instruction
-        state->cause |= EXC_RI << CAUSE_EXCCODE_BIT;
+        EXCEPTION_STATE->cause |= EXC_RI << CAUSE_EXCCODE_BIT;
         pass_up_or_die(GENERALEXCEPT);
         return;
     }
@@ -115,8 +113,7 @@ void pass_up_or_die(int exep_code)
     }
     else
     {
-        state_t *state = (state_t *)BIOSDATAPAGE;
-        // current_proc->p_supportStruct->sup_exceptState[exep_code] = *state;
+        // current_proc->p_supportStruct->sup_exceptState[exep_code] = *EXCEPTION_STATE;
         context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
         LDCXT(exep_context.stackPtr, exep_context.status, exep_context.pc);
     }

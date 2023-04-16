@@ -5,6 +5,8 @@
 #include <ash.h>
 #include <initial.h>
 #include <scheduler.h>
+#include <pandos_const.h>
+#include <TODO.h>
 
 HIDDEN void terminate_recursively(pcb_t *);
 HIDDEN void syscall_end(bool terminated, bool blocking);
@@ -12,11 +14,10 @@ HIDDEN pcb_t *get_proc(int pid);
 
 void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 {
-    state_t *state = (state_t *)BIOSDATAPAGE;
     pcb_t *new_proc = allocPcb();
     if (new_proc == NULL)
     {
-        state->reg_v0 = -1;
+        EXCEPTION_STATE->reg_v0 = -1;
         return;
     }
 
@@ -42,7 +43,7 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
     process_count += 1;
 
     // TODO: metti il pid nel registro v0
-    state->reg_v0 = new_proc->p_pid;
+    EXCEPTION_STATE->reg_v0 = new_proc->p_pid;
 
     syscall_end(false, false);
 }
@@ -70,7 +71,7 @@ void passeren(int *semAddr)
     {
         insertBlocked(semAddr, current_proc);
         current_proc == NULL;
-        // TODO: incrementare il counter dei processi bloccati
+        soft_block_count+=1; // TODO: incrementare il counter dei processi bloccati
         //  schedule the next process
         syscall_end(false, true);
     }
@@ -87,7 +88,7 @@ void passeren(int *semAddr)
         else
         {
             insertProcQ(ready_q, proc);
-            // TODO: decrementare il counter dei processi bloccati
+            soft_block_count-=1;// TODO: decrementare il counter dei processi bloccati
             syscall_end(false, true);
         }
     }
@@ -135,16 +136,44 @@ void do_io(int *cmdAddr, int *cmdValues)
     cmdAddr = cmdValues;
 }
 
-void get_cpu_time() {}
+void get_cpu_time() {
+    unsigned int end_time;
+    STCK(end_time);
+    EXCEPTION_STATE->reg_v0 = current_proc->p_time + (end_time - start_time);
+}
 
 // questa syscall e` bloccante, capitolo 3.5.11
-void wait_for_clock() {}
+void wait_for_clock() {
 
-void get_support_data() {}
+    passeren(&pseudoclock_semaphore);
+}
 
-void get_process_id(bool parent) {}
+void get_support_data() {
+    EXCEPTION_STATE->reg_v0 = current_proc->p_supportstruct;
+}
 
-void get_children(int *children, int size) {}
+void get_process_id(bool parent) {
+    if(parent){
+        if(getNamespace(current_proc, NS_PID)!=getNamespace(current_proc->p_parent, NS_PID))
+            EXCEPTION_STATE->reg_v0 = 0;
+        else
+            EXCEPTION_STATE->reg_v0 = current_proc->p_parent->p_pid;
+    }else
+	    EXCEPTION_STATE->reg_v0 = current_proc->p_pid;
+}
+
+void get_children(int *children, int size) {
+    int counter=0;
+    pcb_t* i;
+    list_for_each_entry(i, current_proc->p_child, p_sib){
+        if(getNamespace(current_proc, NS_PID) == getNamespace(i, NS_PID)){
+            if(counter<size)
+                children[counter] = i->p_pid;
+            counter++;
+        }
+    }
+    EXCEPTION_STATE->reg_v0 = counter;
+}
 
 HIDDEN void syscall_end(bool terminated, bool blocking)
 {
