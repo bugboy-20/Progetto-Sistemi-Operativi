@@ -149,7 +149,7 @@ void wait_for_clock() {
 }
 
 void get_support_data() {
-    EXCEPTION_STATE->reg_v0 = current_proc->p_supportstruct;
+    EXCEPTION_STATE->reg_v0 = current_proc->p_supportStruct;
 }
 
 void get_process_id(bool parent) {
@@ -165,7 +165,7 @@ void get_process_id(bool parent) {
 void get_children(int *children, int size) {
     int counter=0;
     pcb_t* i;
-    list_for_each_entry(i, current_proc->p_child, p_sib){
+    list_for_each_entry(i, &current_proc->p_child, p_sib){
         if(getNamespace(current_proc, NS_PID) == getNamespace(i, NS_PID)){
             if(counter<size)
                 children[counter] = i->p_pid;

@@ -1,8 +1,5 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
-#include "umps/const.h"
 #include <pandos_types.h>
-#include <pandos_const.h>
-#include <umps/types.h>
 void notTimeInterrupt();
 /*
  * Interrupt Line   |   Device Class
