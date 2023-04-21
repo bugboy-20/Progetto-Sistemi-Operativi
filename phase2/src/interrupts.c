@@ -1,5 +1,56 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
+#include "libumps_copy_for_reference.h"
+#include "syscall.h"
+#include "umps/const.h"
+#include "umps/types.h"
 #include <pandos_types.h>
+#include <ash.h>
+#include <initial.h>
+#include <list.h>
+
+#define IDBM 0x10000040 // Interrupt Devices BitMap
+#define TERMINALBM  0x10000040 + 0x10 //Interrupt Line 7 Interrupting Devices Bit Map
+#define PRINTERBM   0x10000040 + 0x0C //Interrupt Line 6 Interrupting Devices Bit Map
+#define NETWORKBM   0x10000040 + 0x08 //Interrupt Line 5 Interrupting Devices Bit Map
+#define FLASHBM     0x10000040 + 0x04 //Interrupt Line 4 Interrupting Devices Bit Map
+#define DISKBM      0x10000040 + 0x00//Interrupt Line 3 Interrupting Devices Bit Map
+
+// calculate the device's device register
+inline memaddr deviceReg(int IntlineNo, int DevNo) {
+    return 0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10);
+}
+
+inline int getDevNo(const int bitMap) {
+    for(char i=0; i<<8; i++) 
+        if(1<<i)
+            return i;
+    
+    return -1; //Error
+}
+
+void dtpInterrupt(int IntlineNo, int DevNo) {
+    /*
+        6. Insert the newly unblocked pcb on the Ready Queue, transitioning this
+        process from the “blocked” state to the “ready” state.
+        7. Return control to the Current Process: Perform a LDST on the saved
+        exception state (located at the start of the BIOS Data Page [Section
+     * */
+    dtpreg_t *dev = (dtpreg_t*) deviceReg(IntlineNo, DevNo);
+    int* devSem = (int*) dev_sem_addr(IntlineNo, DevNo);
+    unsigned int status = dev->status;
+    dev->command = ACK;
+    pcb_t* proc = headBlocked(devSem);
+    verhogen(devSem);
+    proc->p_s.reg_v0 = status;
+
+    //TODO aggiungere a ready_q e cambiare stato del processo
+    list_add_tail(&proc->p_list, ready_q);
+    
+
+    //TODO LDST(void *statep);
+
+}
+
 void notTimeInterrupt();
 /*
  * Interrupt Line   |   Device Class
@@ -27,31 +78,14 @@ are processed.
 *///TODO capire cosa intende con "...as soon as interrupts are unmasked again; "
 
 
-    if (cause & TIMERINTERRUPT);
-    if (cause & DISKINTERRUPT);
-    if (cause & FLASHINTERRUPT);
-    if (cause & PRINTINTERRUPT);
+    if (cause & TIMERINTERRUPT) {
+
+    }
+    if (cause & DISKINTERRUPT)
+        dtpInterrupt(3, getDevNo(DISKBM));
+    if (cause & FLASHINTERRUPT)
+        dtpInterrupt(4, getDevNo(FLASHBM));
+    if (cause & PRINTINTERRUPT)
+        dtpInterrupt(5, getDevNo(PRINTERBM));
     if (cause & TERMINTERRUPT);
-}
-
-void notTimeInterrupt() {
-    /*1. Calculate the address for this device’s device register. [Section ??-pops]
-2. Save off the status code from the device’s device register.
-3. Acknowledge the outstanding interrupt. This is accomplished by writ-
-ing the acknowledge command code in the interrupting device’s device
-register.
-Alternatively, writing a new command in the interrupting
-device’s device register will also acknowledge the interrupt.
-4. Perform a V operation on the Nucleus maintained semaphore associ-
-ated with this (sub)device. This operation should unblock the process
-(pcb) which initiated this I/O operation and then requested to wait for
-its completion via a SYS5 operation.
-5. Place the stored off status code in the newly unblocked pcb’s v0 register.
-6. Insert the newly unblocked pcb on the Ready Queue, transitioning this
-process from the “blocked” state to the “ready” state.
-7. Return control to the Current Process: Perform a LDST on the saved
-exception state (located at the start of the BIOS Data Page [Section
-     * */
-
-
 }
