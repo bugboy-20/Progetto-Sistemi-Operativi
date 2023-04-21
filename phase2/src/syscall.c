@@ -3,10 +3,14 @@
 #include <types.h>
 #include <pcb.h>
 #include <ash.h>
+#include <ns.h>
 #include <initial.h>
 #include <scheduler.h>
 #include <pandos_const.h>
 #include <TODO.h>
+
+#define BLOCKING true
+#define TERMINATED true
 
 HIDDEN void terminate_recursively(pcb_t *);
 HIDDEN void syscall_end(bool terminated, bool blocking);
@@ -18,6 +22,7 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
     if (new_proc == NULL)
     {
         EXCEPTION_STATE->reg_v0 = -1;
+        syscall_end(!TERMINATED, !BLOCKING);
         return;
     }
 
@@ -35,17 +40,16 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
     // new process is the progeny of the caller
     insertChild(current_proc, new_proc);
 
-    // se ns è NULL dovrei usare il namespace del padre
+    // if ns is NULL we use parent namespace
     if (ns == NULL)
         ns = current_proc->namespaces[NS_PID];
     new_proc->namespaces[NS_PID] = ns;
 
     process_count += 1;
 
-    // TODO: metti il pid nel registro v0
     EXCEPTION_STATE->reg_v0 = new_proc->p_pid;
 
-    syscall_end(false, false);
+    syscall_end(!TERMINATED, !BLOCKING);
 }
 
 void terminate_process(int pid)
@@ -54,13 +58,13 @@ void terminate_process(int pid)
     {
         // termino il processo corrente e tutta la sua progenie
         terminate_recursively(current_proc);
-        syscall_end(true, false);
+        syscall_end(TERMINATED, !BLOCKING);
         return;
     }
     pcb_t *dead_proc = get_proc(pid);
     terminate_recursively(dead_proc);
 
-    syscall_end(false, false);
+    syscall_end(!TERMINATED, !BLOCKING);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
@@ -69,11 +73,12 @@ void passeren(int *semAddr)
     // current process goes from running to blocked
     if (*semAddr == 0)
     {
+        // TODO: rimuovere current_proc dalla ready_q?
         insertBlocked(semAddr, current_proc);
-        current_proc == NULL;
-        soft_block_count+=1; // TODO: incrementare il counter dei processi bloccati
+        current_proc = NULL;
+        soft_block_count += 1;
         //  schedule the next process
-        syscall_end(false, true);
+        syscall_end(!TERMINATED, BLOCKING);
     }
     // unblock the first blocked process
     else
@@ -81,29 +86,29 @@ void passeren(int *semAddr)
         pcb_t *proc = removeBlocked(semAddr);
         if (proc == NULL)
         {
-            // no proc is blocked, resource given to current proc
+            // no other proc is blocked, resource given to current proc
             (*semAddr) -= 1;
-            syscall_end(false, false);
+            syscall_end(!TERMINATED, !BLOCKING);
         }
         else
         {
             insertProcQ(ready_q, proc);
-            soft_block_count-=1;// TODO: decrementare il counter dei processi bloccati
-            syscall_end(false, true);
+            soft_block_count -= 1;
+            syscall_end(!TERMINATED, BLOCKING);
         }
     }
 }
 
 void verhogen(int *semAddr)
 {
-    if (*semAddr = 1)
+    if (*semAddr == 1)
     {
-        // la V non si può fare se il sem è a 1
+        // when semAddr = 1, V is blocking
         insertBlocked(semAddr, current_proc);
-        current_proc == NULL;
-        // TODO: incrementare il counter dei processi bloccati
+        current_proc = NULL;
+        soft_block_count += 1;
         //  schedule the next process
-        syscall_end(false, true);
+        syscall_end(!TERMINATED, BLOCKING);
     }
     else
     {
@@ -112,11 +117,13 @@ void verhogen(int *semAddr)
         {
             // no proc is blocked, resource given to current proc
             (*semAddr) += 1;
+            syscall_end(!TERMINATED, !BLOCKING);
         }
         else
         {
             insertProcQ(ready_q, proc);
-            // TODO: decrementare il counter dei processi bloccati
+            soft_block_count -= 1;
+            syscall_end(!TERMINATED, BLOCKING);
         }
     }
 }
@@ -129,45 +136,54 @@ void do_io(int *cmdAddr, int *cmdValues)
     // la richiesta di IO blocca sempre il processo
     // TODO: capire qual'è il semaforo sul quale il processo deve bloccarsi
     // insertBlocked(..., current_proc);
-    current_proc == NULL;
+    current_proc = NULL;
     scheduler();
 
     // TODO: capire se questa è l'operazione giusta da fare
     cmdAddr = cmdValues;
 }
 
-void get_cpu_time() {
+void get_cpu_time()
+{
     unsigned int end_time;
     STCK(end_time);
     EXCEPTION_STATE->reg_v0 = current_proc->p_time + (end_time - start_time);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
-void wait_for_clock() {
+void wait_for_clock()
+{
 
     passeren(&pseudoclock_semaphore);
 }
 
-void get_support_data() {
-    EXCEPTION_STATE->reg_v0 = current_proc->p_supportStruct;
+void get_support_data()
+{
+    EXCEPTION_STATE->reg_v0 = (memaddr)current_proc->p_supportStruct;
 }
 
-void get_process_id(bool parent) {
-    if(parent){
-        if(getNamespace(current_proc, NS_PID)!=getNamespace(current_proc->p_parent, NS_PID))
+void get_process_id(bool parent)
+{
+    if (parent)
+    {
+        if (getNamespace(current_proc, NS_PID) != getNamespace(current_proc->p_parent, NS_PID))
             EXCEPTION_STATE->reg_v0 = 0;
         else
             EXCEPTION_STATE->reg_v0 = current_proc->p_parent->p_pid;
-    }else
-	    EXCEPTION_STATE->reg_v0 = current_proc->p_pid;
+    }
+    else
+        EXCEPTION_STATE->reg_v0 = current_proc->p_pid;
 }
 
-void get_children(int *children, int size) {
-    int counter=0;
-    pcb_t* i;
-    list_for_each_entry(i, &current_proc->p_child, p_sib){
-        if(getNamespace(current_proc, NS_PID) == getNamespace(i, NS_PID)){
-            if(counter<size)
+void get_children(int *children, int size)
+{
+    int counter = 0;
+    pcb_t *i;
+    list_for_each_entry(i, &current_proc->p_child, p_sib)
+    {
+        if (getNamespace(current_proc, NS_PID) == getNamespace(i, NS_PID))
+        {
+            if (counter < size)
                 children[counter] = i->p_pid;
             counter++;
         }
@@ -196,7 +212,6 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     else
     {
         LDST(state);
-        // TODO: capire se devo chiamare lo scheduler
     }
 }
 
@@ -221,7 +236,7 @@ HIDDEN void terminate_recursively(pcb_t *proc)
     {
         // blocked state
         outBlocked(proc);
-        // TOOD: aggiustare il soft-block count se necessario
+        // TODO: aggiustare il soft-block count se necessario
         soft_block_count -= 1;
     }
 
