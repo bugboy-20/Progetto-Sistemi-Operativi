@@ -138,20 +138,17 @@ void do_io(int *cmdAddr, int *cmdValues)
      * 4 elements for all the other devices
      */
     // ((address - startaddress) / register size) + device starting index
-    int type = ((*cmdAddr - 0x10000054) / 0x7F) + 3;
-    int n = 0; // non so come calcolare il numero di linea
+    int type = ((*cmdAddr - 0x10000054) / 0x80) + 3;
+    //((*cmdAddr - startaddress) - ((type - 3) * register size)) / device n size;
+    int n = ((*cmdAddr - 0x10000054) - ((type - 3) * 0x80)) / 0x10;
 
     // la richiesta di IO blocca sempre il processo
-    insertBlocked(dev_sem_addr(type, n), current_proc);
+    insertBlocked((int *)dev_sem_addr(type, n), current_proc);
     current_proc = NULL;
 
     // TODO: capire se questa è l'operazione giusta da fare
-    *cmdAddr = cmdValues;
+    *cmdAddr = *cmdValues;
     syscall_end(!TERMINATED, BLOCKING);
-}
-
-int dev_n(memaddr address)
-{
 }
 
 void get_cpu_time()
