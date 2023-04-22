@@ -133,14 +133,25 @@ void do_io(int *cmdAddr, int *cmdValues)
 {
     // istruzioni non chiare, non so come implementarla
 
+    /**
+     * cmdValues is an array of 2 elements for the terminal devices,
+     * 4 elements for all the other devices
+     */
+    // ((address - startaddress) / register size) + device starting index
+    int type = ((*cmdAddr - 0x10000054) / 0x7F) + 3;
+    int n = 0; // non so come calcolare il numero di linea
+
     // la richiesta di IO blocca sempre il processo
-    // TODO: capire qual'è il semaforo sul quale il processo deve bloccarsi
-    // insertBlocked(..., current_proc);
+    insertBlocked(dev_sem_addr(type, n), current_proc);
     current_proc = NULL;
-    scheduler();
 
     // TODO: capire se questa è l'operazione giusta da fare
-    cmdAddr = cmdValues;
+    *cmdAddr = cmdValues;
+    syscall_end(!TERMINATED, BLOCKING);
+}
+
+int dev_n(memaddr address)
+{
 }
 
 void get_cpu_time()
