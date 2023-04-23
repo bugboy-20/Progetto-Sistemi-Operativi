@@ -156,18 +156,20 @@ void get_cpu_time()
     unsigned int end_time;
     STCK(end_time);
     EXCEPTION_STATE->reg_v0 = current_proc->p_time + (end_time - start_time);
+    syscall_end(!TERMINATED, !BLOCKING);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
 void wait_for_clock()
 {
-
     passeren(&pseudoclock_semaphore);
+    //syscall_end(!TERMINATED, BLOCKING);
 }
 
 void get_support_data()
 {
     EXCEPTION_STATE->reg_v0 = (memaddr)current_proc->p_supportStruct;
+    syscall_end(!TERMINATED, !BLOCKING);
 }
 
 void get_process_id(bool parent)
@@ -181,6 +183,7 @@ void get_process_id(bool parent)
     }
     else
         EXCEPTION_STATE->reg_v0 = current_proc->p_pid;
+    syscall_end(!TERMINATED, !BLOCKING);
 }
 
 void get_children(int *children, int size)
@@ -197,6 +200,7 @@ void get_children(int *children, int size)
         }
     }
     EXCEPTION_STATE->reg_v0 = counter;
+    syscall_end(!TERMINATED, !BLOCKING);
 }
 
 HIDDEN void syscall_end(bool terminated, bool blocking)
