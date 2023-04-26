@@ -18,7 +18,7 @@
 #define FLASHBM     0x10000040 + 0x04 //Interrupt Line 4 Interrupting Devices Bit Map
 #define DISKBM      0x10000040 + 0x00//Interrupt Line 3 Interrupting Devices Bit Map
 
-// calculate the device's device register
+// calculate the address of the device's device register
 inline memaddr deviceReg(int IntlineNo, int DevNo) {
     return 0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10);
 }
@@ -32,30 +32,22 @@ inline int getDevNo(const int bitMap) {
 }
 
 void dtpInterrupt(int IntlineNo, int DevNo) {
-    /*
-        6. Insert the newly unblocked pcb on the Ready Queue, transitioning this
-        process from the “blocked” state to the “ready” state.
-        7. Return control to the Current Process: Perform a LDST on the saved
-        exception state (located at the start of the BIOS Data Page [Section
-     * */
+    // Calculate the address for this device's register
     dtpreg_t *dev = (dtpreg_t*) deviceReg(IntlineNo, DevNo);
-    int* devSem = (int*) dev_sem_addr(IntlineNo, DevNo);
+    // Save off the status code from the device’s device register
     unsigned int status = dev->status;
+    // Acknowledge the outstanding interrupt. This is accomplished by writing the acknowledge command code in the interrupting device’s device register
     dev->command = ACK;
+    // Perform a V operation on the Nucleus maintained semaphore associated with this (sub)device. This operation should unblock the process (pcb) which initiated this I/O operation and then requested to wait for its completion via a SYS5 operation.
+    int* devSem = (int*) dev_sem_addr(IntlineNo, DevNo);
     pcb_t* proc = headBlocked(devSem);
     verhogen(devSem);
+    // Place the stored off status code in the newly unblocked pcb’s v0 register.
     proc->p_s.reg_v0 = status;
-
-    //TODO aggiungere a ready_q e cambiare stato del processo
-    // list_add_tail(&proc->p_list, ready_q);
+    // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
     insertProcQ(ready_q, proc);
-    
-    
-
-    //TODO LDST(void *statep);
-
-    //TODO controllare che sia corretto
-    state_t *state = (memaddr) BIOSDATAPAGE;
+    // Return control to the Current Process: Perform a LDST on the saved exception state
+    state_t *state = EXCEPTION_STATE;
     LDST(state);
 
 }
