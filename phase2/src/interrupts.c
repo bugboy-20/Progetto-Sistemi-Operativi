@@ -3,6 +3,7 @@
 #include <syscall.h>
 #include <umps/const.h>
 #include <umps/types.h>
+#include <pandos_const.h>
 #include <pandos_types.h>
 #include <ash.h>
 #include <initial.h>
@@ -52,6 +53,10 @@ void dtpInterrupt(int IntlineNo, int DevNo) {
     
 
     //TODO LDST(void *statep);
+
+    //TODO controllare che sia corretto
+    state_t *state = (memaddr) BIOSDATAPAGE;
+    LDST(state);
 
 }
 
