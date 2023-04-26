@@ -1,12 +1,14 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
-#include "libumps_copy_for_reference.h"
-#include "syscall.h"
-#include "umps/const.h"
-#include "umps/types.h"
+#include <umps/libumps.h>
+#include <syscall.h>
+#include <umps/const.h>
+#include <umps/types.h>
 #include <pandos_types.h>
 #include <ash.h>
 #include <initial.h>
 #include <list.h>
+#include <pcb.h>
+#include <scheduler.h>
 
 #define IDBM 0x10000040 // Interrupt Devices BitMap
 #define TERMINALBM  0x10000040 + 0x10 //Interrupt Line 7 Interrupting Devices Bit Map
@@ -21,8 +23,8 @@ inline memaddr deviceReg(int IntlineNo, int DevNo) {
 }
 
 inline int getDevNo(const int bitMap) {
-    for(char i=0; i<<8; i++) 
-        if(1<<i)
+    for(char i=0; i<8; i++) 
+        if(1<<i & bitMap)
             return i;
     
     return -1; //Error
@@ -44,7 +46,9 @@ void dtpInterrupt(int IntlineNo, int DevNo) {
     proc->p_s.reg_v0 = status;
 
     //TODO aggiungere a ready_q e cambiare stato del processo
-    list_add_tail(&proc->p_list, ready_q);
+    // list_add_tail(&proc->p_list, ready_q);
+    insertProcQ(ready_q, proc);
+    
     
 
     //TODO LDST(void *statep);
@@ -65,8 +69,8 @@ void notTimeInterrupt();
  *              7   |   Terminal Devices
  */
 void interrupt_handler() {
-    state_t *state = (memaddr) BIOSDATAPAGE;
-    unsigned int cause = ((state_t*) BIOSDATAPAGE)->cause;
+    state_t *state = EXCEPTION_STATE; // TODO Controllare se effettivamente serve
+    unsigned int cause = EXCEPTION_STATE->cause;
 
 
     // ignoring interrupt line 0 
@@ -79,7 +83,10 @@ are processed.
 
 
     if (cause & TIMERINTERRUPT) {
-
+        setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
+        current_proc->p_s.status = EXCEPTION_STATE->status;
+        insertProcQ(ready_q, current_proc);
+        scheduler();
     }
     if (cause & DISKINTERRUPT)
         dtpInterrupt(3, getDevNo(DISKBM));
