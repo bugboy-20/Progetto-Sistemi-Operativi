@@ -1,7 +1,9 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
 #include "libumps_copy_for_reference.h"
+#include "pandos_const.h"
 #include "syscall.h"
 #include "umps/const.h"
+#include "umps/libumps.h"
 #include "umps/types.h"
 #include <pandos_types.h>
 #include <ash.h>
@@ -21,8 +23,8 @@ inline memaddr deviceReg(int IntlineNo, int DevNo) {
 }
 
 inline int getDevNo(const int bitMap) {
-    for(char i=0; i<<8; i++) 
-        if(1<<i)
+    for(char i=0; i<8; i++) 
+        if(1<<i & bitMap)
             return i;
     
     return -1; //Error
@@ -49,6 +51,10 @@ void dtpInterrupt(int IntlineNo, int DevNo) {
 
     //TODO LDST(void *statep);
 
+    //TODO controllare che sia corretto
+    state_t *state = (memaddr) BIOSDATAPAGE;
+    LDST(state);
+
 }
 
 void notTimeInterrupt();
@@ -65,7 +71,6 @@ void notTimeInterrupt();
  *              7   |   Terminal Devices
  */
 void interrupt_handler() {
-    state_t *state = (memaddr) BIOSDATAPAGE;
     unsigned int cause = ((state_t*) BIOSDATAPAGE)->cause;
 
 
