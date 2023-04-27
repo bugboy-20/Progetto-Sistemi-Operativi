@@ -9,7 +9,7 @@ extern passupvector_t* pass_up_vector;
 extern int process_count;
 extern int soft_block_count;
 extern pcb_PTR current_proc;
-extern struct list_head* ready_q;
+extern struct list_head ready_q;
 extern sem_t sem_table[DEVICECNT];
 extern cpu_t start_time;
 

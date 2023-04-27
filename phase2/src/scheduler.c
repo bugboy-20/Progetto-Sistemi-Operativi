@@ -6,9 +6,9 @@
 
 void scheduler()
 {
-    if (!emptyProcQ(ready_q))
+    if (!emptyProcQ(&ready_q))
     {
-        current_proc = removeProcQ(ready_q);
+        current_proc = removeProcQ(&ready_q);
         // TIMESLICE = 5000, time is in ps (1 ms = 1000 ps)
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
         LDST(&(current_proc->p_s));

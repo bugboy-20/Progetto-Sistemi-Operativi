@@ -14,7 +14,6 @@ void exception_handler()
     switch (exception_code)
     {
     case EXC_INT:
-        // TODO: chiamare l'interrupt handler
         interrupt_handler();
         break;
     case EXC_MOD:

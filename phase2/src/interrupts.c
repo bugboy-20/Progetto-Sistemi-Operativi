@@ -45,7 +45,7 @@ void dtpInterrupt(int IntlineNo, int DevNo) {
     // Place the stored off status code in the newly unblocked pcb’s v0 register.
     proc->p_s.reg_v0 = status;
     // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
-    insertProcQ(ready_q, proc);
+    insertProcQ(&ready_q, proc);
     // Return control to the Current Process: Perform a LDST on the saved exception state
     state_t *state = EXCEPTION_STATE;
     LDST(state);
@@ -82,7 +82,7 @@ are processed.
     if (cause & TIMERINTERRUPT) {
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
         current_proc->p_s.status = EXCEPTION_STATE->status;
-        insertProcQ(ready_q, current_proc);
+        insertProcQ(&ready_q, current_proc);
         scheduler();
     }
     if (cause & DISKINTERRUPT)

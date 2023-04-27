@@ -14,7 +14,7 @@ passupvector_t* pass_up_vector;
 int process_count;
 int soft_block_count;
 pcb_PTR current_proc;
-struct list_head* ready_q;
+struct list_head ready_q;
 sem_t sem_table[DEVICECNT];
 cpu_t start_time;
 
@@ -34,7 +34,7 @@ int main() {
     // Inizialize all nucleus maintained variables
     process_count=0;
     soft_block_count=0;
-    mkEmptyProcQ(ready_q);
+    mkEmptyProcQ(&ready_q);
     current_proc = NULL;
 
     // Set Interval Timer to 100ms = 100000ps
@@ -65,7 +65,7 @@ int main() {
     init->p_supportStruct = NULL;
 
     // Insert the process in the ready queue and call the scheduler
-    insertProcQ(ready_q, init);
+    insertProcQ(&ready_q, init);
     scheduler();
 
     return 0;

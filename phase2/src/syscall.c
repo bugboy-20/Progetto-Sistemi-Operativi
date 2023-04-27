@@ -35,7 +35,7 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
     new_proc->p_semAdd = NULL;
 
     // insert new process into the reade queue
-    insertProcQ(ready_q, new_proc);
+    insertProcQ(&ready_q, new_proc);
 
     // new process is the progeny of the caller
     insertChild(current_proc, new_proc);
@@ -92,7 +92,7 @@ void passeren(int *semAddr)
         }
         else
         {
-            insertProcQ(ready_q, proc);
+            insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
             syscall_end(!TERMINATED, BLOCKING);
         }
@@ -121,7 +121,7 @@ void verhogen(int *semAddr)
         }
         else
         {
-            insertProcQ(ready_q, proc);
+            insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
             syscall_end(!TERMINATED, BLOCKING);
         }
@@ -163,7 +163,7 @@ void get_cpu_time()
 void wait_for_clock()
 {
     passeren(&pseudoclock_semaphore);
-    //syscall_end(!TERMINATED, BLOCKING);
+    // syscall_end(!TERMINATED, BLOCKING);
 }
 
 void get_support_data()
@@ -244,7 +244,7 @@ HIDDEN void terminate_recursively(pcb_t *proc)
     {
         // running state, don't have to do anything (?)
     }
-    else if (outProcQ(ready_q, proc) == NULL) // ready state
+    else if (outProcQ(&ready_q, proc) == NULL) // ready state
     {
         // blocked state
         outBlocked(proc);
@@ -267,7 +267,7 @@ HIDDEN pcb_t *get_proc(int pid)
 
     struct pcb_t *tmp;
 
-    list_for_each_entry(tmp, ready_q, p_list)
+    list_for_each_entry(tmp, &ready_q, p_list)
     {
         if (tmp->p_pid == pid)
         {
