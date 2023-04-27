@@ -21,4 +21,11 @@ extern cpu_t start_time;
 #define dev_sem_addr(type, n) ((memaddr) &sem_table[(type -3)*DEVPERINT + n])
 
 
+
+typedef int size_t;
+// copia porzione di memoria
+// possibile rischio di buffer overflow
+// TODO valutare di spostare la funzione
+void *memcpy(void *dest, const void * src, size_t n);
+
 #endif //INITIAL_H
