@@ -1,5 +1,6 @@
 #ifndef INITIAL_H
 #define INITIAL_H
+#include <pandos_const.h>
 #include <pandos_types.h>
 #define  EXCEPTION_STATE ((state_t*)BIOSDATAPAGE)
 
