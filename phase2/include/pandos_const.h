@@ -183,7 +183,6 @@
 /* End of Mikeyg constants */
 
 /* Custom constants */
-#define NUMSEM 49
-#define PSEUDOCLOCKSEM 48
+#define NUMSEM 48
 
 #endif

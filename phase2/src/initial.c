@@ -16,7 +16,8 @@ int process_count;
 int soft_block_count;
 pcb_PTR current_proc;
 struct list_head ready_q;
-sem_t sem_table[NUMSEM];
+int sem_table[NUMSEM];
+int pseudoclock_semaphore;
 cpu_t start_time;
 
 int main() {

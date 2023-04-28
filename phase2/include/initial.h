@@ -10,15 +10,16 @@ extern int process_count;
 extern int soft_block_count;
 extern pcb_PTR current_proc;
 extern struct list_head ready_q;
-extern sem_t sem_table[DEVICECNT];
+extern int sem_table[NUMSEM];
+extern int pseudoclock_semaphore;
 extern cpu_t start_time;
 
 
 
 
 // Returns the address of the semaphore related to a specific device
-// type : type of devise use DISKINT, FLASHINT, ecc... (defined in umps/const.h)
-#define dev_sem_addr(type, n) ((memaddr) &sem_table[(type -3)*DEVPERINT + n])
+// type : type of device use DISKINT, FLASHINT, ecc... (defined in umps/const.h)
+#define dev_sem_addr(type, n) ((memaddr) &sem_table[(type - 3) * DEVPERINT + n])
 
 
 
