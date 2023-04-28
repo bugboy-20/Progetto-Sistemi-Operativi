@@ -1,4 +1,5 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
+#include <umps/cp0.h>
 #include <umps/libumps.h>
 #include <syscall.h>
 #include <umps/const.h>
@@ -11,12 +12,12 @@
 #include <pcb.h>
 #include <scheduler.h>
 
-#define IDBM 0x10000040 // Interrupt Devices BitMap
-#define TERMINALBM  0x10000040 + 0x10 //Interrupt Line 7 Interrupting Devices Bit Map
-#define PRINTERBM   0x10000040 + 0x0C //Interrupt Line 6 Interrupting Devices Bit Map
-#define NETWORKBM   0x10000040 + 0x08 //Interrupt Line 5 Interrupting Devices Bit Map
-#define FLASHBM     0x10000040 + 0x04 //Interrupt Line 4 Interrupting Devices Bit Map
-#define DISKBM      0x10000040 + 0x00//Interrupt Line 3 Interrupting Devices Bit Map
+#define IDBM 0x10000040             // Interrupt Devices BitMap
+#define TERMINALBM  IDBM + 0x10     // Interrupt Line 7 Interrupting Devices Bit Map
+#define PRINTERBM   IDBM + 0x0C     // Interrupt Line 6 Interrupting Devices Bit Map
+#define NETWORKBM   IDBM + 0x08     // Interrupt Line 5 Interrupting Devices Bit Map
+#define FLASHBM     IDBM + 0x04     // Interrupt Line 4 Interrupting Devices Bit Map
+#define DISKBM      IDBM + 0x00     // Interrupt Line 3 Interrupting Devices Bit Map
 
 // calculate the address of the device's device register
 inline memaddr deviceReg(int IntlineNo, int DevNo) {
@@ -24,8 +25,8 @@ inline memaddr deviceReg(int IntlineNo, int DevNo) {
 }
 
 inline int getDevNo(const int bitMap) {
-    for(char i=0; i<8; i++) 
-        if(1<<i & bitMap)
+    for(char i = 0; i < 8; i++) 
+        if(1 << i & bitMap)
             return i;
     
     return -1; //Error
@@ -42,10 +43,13 @@ void dtpInterrupt(int IntlineNo, int DevNo) {
     int* devSem = (int*) dev_sem_addr(IntlineNo, DevNo);
     pcb_t* proc = headBlocked(devSem);
     verhogen(devSem);
-    // Place the stored off status code in the newly unblocked pcb’s v0 register.
-    proc->p_s.reg_v0 = status;
-    // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
-    insertProcQ(&ready_q, proc);
+    // If this process is present
+    if (proc != NULL) {
+        // Place the stored off status code in the newly unblocked pcb’s v0 register.
+        proc->p_s.reg_v0 = status;
+        // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
+        insertProcQ(&ready_q, proc);
+    }
     // Return control to the Current Process: Perform a LDST on the saved exception state
     state_t *state = EXCEPTION_STATE;
     LDST(state);
@@ -66,30 +70,34 @@ void notTimeInterrupt();
  *              7   |   Terminal Devices
  */
 void interrupt_handler() {
-    state_t *state = EXCEPTION_STATE; // TODO Controllare se effettivamente serve
-    unsigned int cause = EXCEPTION_STATE->cause;
-
+    // unsigned int cause = EXCEPTION_STATE->cause; // Custom system for getting cause, check if the one below is equal
+    unsigned int cause;
+    CAUSE_GET_EXCCODE(cause);
 
     // ignoring interrupt line 0 
-    /* When there are multiple interrupts pending, and the interrupt exception han-
-dler processes only the single highest priority pending interrupt, the interrupt
-exception handler will be immediately re-entered as soon as interrupts are
-unmasked again; effectively forming a loop until all the pending interrupts
-are processed.
-*///TODO capire cosa intende con "...as soon as interrupts are unmasked again; "
 
-
-    if (cause & TIMERINTERRUPT) {
+    // PLT exception
+    if (cause & CAUSE_IP(1)) {
+        // Acknowledge the PLT interrupt, and load the timer again
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
+        // Copy the processor state in the current process status
         current_proc->p_s.status = EXCEPTION_STATE->status;
+        // Move the process from running to ready
         insertProcQ(&ready_q, current_proc);
+        // Call the scheduler
         scheduler();
     }
-    if (cause & DISKINTERRUPT)
-        dtpInterrupt(3, getDevNo(DISKBM));
-    if (cause & FLASHINTERRUPT)
-        dtpInterrupt(4, getDevNo(FLASHBM));
-    if (cause & PRINTINTERRUPT)
-        dtpInterrupt(5, getDevNo(PRINTERBM));
-    if (cause & TERMINTERRUPT);
+    // Interval Timer exception
+    else if (cause & CAUSE_IP(2)) {
+        // ...
+    }
+    else {
+        if (cause & DISKINTERRUPT)
+            dtpInterrupt(3, getDevNo(DISKBM));
+        if (cause & FLASHINTERRUPT)
+            dtpInterrupt(4, getDevNo(FLASHBM));
+        if (cause & PRINTINTERRUPT)
+            dtpInterrupt(5, getDevNo(PRINTERBM));
+        if (cause & TERMINTERRUPT);
+    }
 }
