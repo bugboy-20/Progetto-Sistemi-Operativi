@@ -6,6 +6,7 @@
 #include <exceptions.h>
 #include <list.h>
 #include <umps3/umps/libumps.h>
+#include <pandos_const.h>
 
 extern void test();
 extern void uTLB_RefillHandler();
@@ -15,7 +16,7 @@ int process_count;
 int soft_block_count;
 pcb_PTR current_proc;
 struct list_head ready_q;
-sem_t sem_table[DEVICECNT];
+sem_t sem_table[NUMSEM];
 cpu_t start_time;
 
 int main() {

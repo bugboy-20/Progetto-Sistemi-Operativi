@@ -182,5 +182,8 @@
 #define POOLSIZE (UPROCMAX * 2)
 /* End of Mikeyg constants */
 
+/* Custom constants */
+#define NUMSEM 49
+#define PSEUDOCLOCKSEM 48
 
 #endif
