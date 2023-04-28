@@ -20,7 +20,7 @@
 #define DISKBM      IDBM + 0x00     // Interrupt Line 3 Interrupting Devices Bit Map
 
 // calculate the address of the device's device register
-inline memaddr deviceReg(int IntlineNo, int DevNo) {
+inline memaddr devAddrBase(int IntlineNo, int DevNo) {
     return 0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10);
 }
 
@@ -32,9 +32,9 @@ inline int getDevNo(const int bitMap) {
     return -1; //Error
 }
 
-void dtpInterrupt(int IntlineNo, int DevNo) {
+void notTimerInterrupt(int IntlineNo, int DevNo) {
     // Calculate the address for this device's register
-    dtpreg_t *dev = (dtpreg_t*) deviceReg(IntlineNo, DevNo);
+    dtpreg_t *dev = (dtpreg_t*) devAddrBase(IntlineNo, DevNo);
     // Save off the status code from the device’s device register
     unsigned int status = dev->status;
     // Acknowledge the outstanding interrupt. This is accomplished by writing the acknowledge command code in the interrupting device’s device register
@@ -56,7 +56,6 @@ void dtpInterrupt(int IntlineNo, int DevNo) {
 
 }
 
-void notTimeInterrupt();
 /*
  * Interrupt Line   |   Device Class
  *  -----------------------------------------------
@@ -70,14 +69,12 @@ void notTimeInterrupt();
  *              7   |   Terminal Devices
  */
 void interrupt_handler() {
-    // unsigned int cause = EXCEPTION_STATE->cause; // Custom system for getting cause, check if the one below is equal
-    unsigned int cause;
-    CAUSE_GET_EXCCODE(cause);
+    unsigned int cause = EXCEPTION_STATE->cause; // Custom system for getting cause
 
     // ignoring interrupt line 0 
 
-    // PLT exception
-    if (cause & CAUSE_IP(1)) {
+    // PLT exception, line 1
+    if (cause & LOCALTIMERINT) {
         // Acknowledge the PLT interrupt, and load the timer again
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
         // Copy the processor state in the current process status
@@ -87,17 +84,30 @@ void interrupt_handler() {
         // Call the scheduler
         scheduler();
     }
-    // Interval Timer exception
-    else if (cause & CAUSE_IP(2)) {
-        // ...
+    // Interval Timer exception, line 2
+    else if (cause & TIMERINTERRUPT) {
+        // Load the Interval Timer with 100ms
+        LDIT(PSECOND);
+        // Unblock ALL pcbs blocked on the pseudo-clock semaphore
+        // TODO Non so esattamente come fare, se un ciclo while fino a che non ce ne sono altri da sbloccare o altro
+        // Reset the Pseudo-clock semaphore to 0
+        pseudoclock_semaphore = 0;
+        // Return control to the Current Process with LDST
+        // If not present return to the scheduler, which will do WAIT() or HALT()
+        if (current_proc != NULL)
+            LDST(EXCEPTION_STATE);
+        else
+            scheduler();
+
     }
+    // Line 3-7, these ar the devices
     else {
         if (cause & DISKINTERRUPT)
-            dtpInterrupt(3, getDevNo(DISKBM));
+            notTimerInterrupt(3, getDevNo(DISKBM));
         if (cause & FLASHINTERRUPT)
-            dtpInterrupt(4, getDevNo(FLASHBM));
+            notTimerInterrupt(4, getDevNo(FLASHBM));
         if (cause & PRINTINTERRUPT)
-            dtpInterrupt(5, getDevNo(PRINTERBM));
+            notTimerInterrupt(5, getDevNo(PRINTERBM));
         if (cause & TERMINTERRUPT);
     }
 }
