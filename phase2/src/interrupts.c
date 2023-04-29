@@ -89,7 +89,14 @@ void interrupt_handler() {
         // Load the Interval Timer with 100ms
         LDIT(PSECOND);
         // Unblock ALL pcbs blocked on the pseudo-clock semaphore
-        // TODO Non so esattamente come fare, se un ciclo while fino a che non ce ne sono altri da sbloccare o altro
+        pcb_t *proc;
+        while ((proc = removeBlocked(&pseudoclock_semaphore)) != NULL)
+        {
+            // TODO: direi che devo metterli nella ready q?
+            insertProcQ(&ready_q, proc);
+            soft_block_count -= 1;
+        }
+
         // Reset the Pseudo-clock semaphore to 0
         pseudoclock_semaphore = 0;
         // Return control to the Current Process with LDST
