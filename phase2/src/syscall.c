@@ -1,4 +1,4 @@
-#include "../include/syscall.h"
+#include <syscall.h>
 #include <umps3/umps/libumps.h>
 #include <types.h>
 #include <pcb.h>

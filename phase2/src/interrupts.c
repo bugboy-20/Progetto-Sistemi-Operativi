@@ -1,9 +1,8 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
-#include <umps/cp0.h>
-#include <umps/libumps.h>
-#include <syscall.h>
-#include <umps/const.h>
-#include <umps/types.h>
+#include <umps3/umps/cp0.h>
+#include <umps3/umps/libumps.h>
+#include <umps3/umps/const.h>
+#include <umps3/umps/types.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
 #include <ash.h>
@@ -11,6 +10,7 @@
 #include <list.h>
 #include <pcb.h>
 #include <scheduler.h>
+#include <syscall.h>
 
 #define IDBM 0x10000040             // Interrupt Devices BitMap
 #define TERMINALBM  IDBM + 0x10     // Interrupt Line 7 Interrupting Devices Bit Map
@@ -20,17 +20,22 @@
 #define DISKBM      IDBM + 0x00     // Interrupt Line 3 Interrupting Devices Bit Map
 
 // calculate the address of the device's device register
-inline memaddr devAddrBase(int IntlineNo, int DevNo) {
+/*inline memaddr devAddrBase(int IntlineNo, int DevNo) {
     return 0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10);
-}
+}*/
 
-inline int getDevNo(const int bitMap) {
+#define devAddrBase(IntlineNo, DevNo) (memaddr) (0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10))
+
+static inline int getDevNo(const int bitMap) {
     for(char i = 0; i < 8; i++) 
         if(1 << i & bitMap)
             return i;
     
     return -1; //Error
 }
+
+// TODO workaround, bisogna capire perchè non lo trova da solo il compilatore
+extern void verhogen(int *semAddr);
 
 void notTimerInterrupt(int IntlineNo, int DevNo) {
     // Calculate the address for this device's register
@@ -115,6 +120,8 @@ void interrupt_handler() {
             notTimerInterrupt(4, getDevNo(FLASHBM));
         if (cause & PRINTINTERRUPT)
             notTimerInterrupt(5, getDevNo(PRINTERBM));
-        if (cause & TERMINTERRUPT);
+        if (cause & TERMINTERRUPT) {
+            // TODO
+        }
     }
 }
