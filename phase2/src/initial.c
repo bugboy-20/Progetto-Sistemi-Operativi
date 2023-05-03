@@ -34,7 +34,7 @@ int main() {
     initNamespaces();
     
     // Inizialize all nucleus maintained variables
-    process_count=0;
+    process_count=1;
     soft_block_count=0;
     mkEmptyProcQ(&ready_q);
     current_proc = NULL;

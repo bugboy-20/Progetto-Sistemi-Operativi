@@ -13,19 +13,17 @@ In particolare:
 - Piske [1..3] ∪ [10..13]
 - Michele [19..23]
 
-
-
 ## Divisione parti - Fase 2
 
 1. Inizializzazione del sistema => Diego, Simone
-2. Scheduling => *ci pensiamo quando abbiamo fatto la parte 1*
+2. Scheduling => _ci pensiamo quando abbiamo fatto la parte 1_
 3. Gestione delle eccezioni => Piske, Michele
 
-Se servono delle funzioni non implementate, inserire la signature in un file *TODO.h*
+Se servono delle funzioni non implementate, inserire la signature in un file _TODO.h_
 
 ### cose da implementare subito
 
-main.c -> contiene il main(), quindi inizializza e fa partire il *p2test*
+main.c -> contiene il main(), quindi inizializza e fa partire il _p2test_
 
 syscall.h -> contiene gli header delle syscall
 
@@ -34,7 +32,7 @@ syscall.h -> contiene gli header delle syscall
 ```
 +
 |- include
-	|- syscall.h
+    |- syscall.h
     |- exception.h
     |- scheduler.h
 |- src
@@ -44,7 +42,6 @@ syscall.h -> contiene gli header delle syscall
 	|- syscall.c
 |- Makefile
 ```
-
 
 ## Link Utili
 
