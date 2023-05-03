@@ -112,7 +112,7 @@ void pass_up_or_die(int exep_code)
     }
     else
     {
-        // current_proc->p_supportStruct->sup_exceptState[exep_code] = *EXCEPTION_STATE;
+        current_proc->p_supportStruct->sup_exceptState[exep_code] = *EXCEPTION_STATE;
         context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
         LDCXT(exep_context.stackPtr, exep_context.status, exep_context.pc);
     }

@@ -145,6 +145,7 @@ void do_io(int *cmdAddr, int *cmdValues)
     // la richiesta di IO blocca sempre il processo
     insertBlocked((int *)dev_sem_addr(type, n), current_proc);
     current_proc = NULL;
+    soft_block_count += 1;
 
     // TODO: capire se questa è l'operazione giusta da fare
     *cmdAddr = *cmdValues;
@@ -216,7 +217,7 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     if (blocking)
     {
         // TODO: verificare se l'assegnamento effettua una copia vera e propria
-        // current_proc->p_s = *state;
+        current_proc->p_s = *state;
         // TODO: aggiornare il CPU time per il processo corrente
         // TODO: capire come fare a fare la transition da uno stato ready a blocked
         scheduler();
