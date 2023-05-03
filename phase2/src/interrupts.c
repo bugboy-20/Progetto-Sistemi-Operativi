@@ -35,17 +35,37 @@ static inline int getDevNo(const int bitMap) {
 }
 
 // TODO workaround, bisogna capire perchè non lo trova da solo il compilatore
-extern void verhogen(int *semAddr);
+// extern void verhogen(int *semAddr);
 
 void notTimerInterrupt(int IntlineNo, int DevNo) {
+    unsigned int status;
+    bool read;
     // Calculate the address for this device's register
     dtpreg_t *dev = (dtpreg_t*) devAddrBase(IntlineNo, DevNo);
-    // Save off the status code from the device’s device register
-    unsigned int status = dev->status;
-    // Acknowledge the outstanding interrupt. This is accomplished by writing the acknowledge command code in the interrupting device’s device register
-    dev->command = ACK;
+    // TODO Caso dei terminali
+    if (IntlineNo == TERMINT) {
+        termreg_t* ter = (termreg_t*) dev;
+        read = ter->transm_status == READY;
+        if(!read)
+        {
+            status = ter->transm_status;
+            ter->transm_command = ACK;
+        }
+        else
+        {
+            status = ter->recv_status;
+            ter->recv_command = ACK;
+        }
+    }
+    else {
+        // Save off the status code from the device’s device register
+        status = dev->status;
+        // Acknowledge the outstanding interrupt. This is accomplished by writing the acknowledge command code in the interrupting device’s device register
+        dev->command = ACK;
+    }
     // Perform a V operation on the Nucleus maintained semaphore associated with this (sub)device. This operation should unblock the process (pcb) which initiated this I/O operation and then requested to wait for its completion via a SYS5 operation.
-    int* devSem = (int*) dev_sem_addr(IntlineNo, DevNo);
+    // TODO gestire terminali in scrittura
+    int* devSem = !read ? (int*) dev_sem_addr(IntlineNo, DevNo) : (int*) dev_sem_addr(IntlineNo, DevNo+8);
     pcb_t* proc = headBlocked(devSem);
     verhogen(devSem);
     // If this process is present
@@ -83,7 +103,7 @@ void interrupt_handler() {
         // Acknowledge the PLT interrupt, and load the timer again
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
         // Copy the processor state in the current process status
-        current_proc->p_s.status = EXCEPTION_STATE->status;
+        current_proc->p_s = *EXCEPTION_STATE;
         // Move the process from running to ready
         insertProcQ(&ready_q, current_proc);
         // Call the scheduler
@@ -113,15 +133,12 @@ void interrupt_handler() {
 
     }
     // Line 3-7, these ar the devices
-    else {
-        if (cause & DISKINTERRUPT)
-            notTimerInterrupt(3, getDevNo(DISKBM));
-        if (cause & FLASHINTERRUPT)
-            notTimerInterrupt(4, getDevNo(FLASHBM));
-        if (cause & PRINTINTERRUPT)
-            notTimerInterrupt(5, getDevNo(PRINTERBM));
-        if (cause & TERMINTERRUPT) {
-            // TODO
-        }
-    }
+    else if (cause & DISKINTERRUPT)
+        notTimerInterrupt(DISKINT, getDevNo(DISKBM));
+    else if (cause & FLASHINTERRUPT)
+        notTimerInterrupt(FLASHINT, getDevNo(FLASHBM));
+    else if (cause & PRINTINTERRUPT)
+        notTimerInterrupt(PRNTINT, getDevNo(PRINTERBM));
+    else if (cause & TERMINTERRUPT)
+        notTimerInterrupt(TERMINT, getDevNo(TERMINALBM));
 }
