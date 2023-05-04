@@ -36,7 +36,7 @@ void exception_handler()
 
     case EXC_SYS:
         // call to syscall excpetion handler
-        syscall_handler(EXCEPTION_STATE->reg_a0, &EXCEPTION_STATE->reg_a1, &EXCEPTION_STATE->reg_a2, &EXCEPTION_STATE->reg_a3);
+        syscall_handler(EXCEPTION_STATE->reg_a0, (void*) EXCEPTION_STATE->reg_a1, (void*) EXCEPTION_STATE->reg_a2, (void*) EXCEPTION_STATE->reg_a3);
         break;
 
     default:
