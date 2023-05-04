@@ -10,7 +10,7 @@
 #include <list.h>
 #include <pcb.h>
 #include <scheduler.h>
-#include <syscall.h>
+#include <systemcall.h>
 
 #define IDBM 0x10000040        // Interrupt Devices BitMap
 #define TERMINALBM IDBM + 0x10 // Interrupt Line 7 Interrupting Devices Bit Map

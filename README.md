@@ -25,21 +25,21 @@ Se servono delle funzioni non implementate, inserire la signature in un file _TO
 
 main.c -> contiene il main(), quindi inizializza e fa partire il _p2test_
 
-syscall.h -> contiene gli header delle syscall
+systemcall.h -> contiene gli header delle syscall
 
 ### idea file structure
 
 ```
 +
 |- include
-    |- syscall.h
+    |- systemcall.h
     |- exception.h
     |- scheduler.h
 |- src
 	|- main.c
 	|- exception.c
 	|- scheduler.c
-	|- syscall.c
+	|- systemcall.c
 |- Makefile
 ```
 
