@@ -20,6 +20,7 @@
 #include <pandos_types.h>
 #include <umps3/umps/libumps.h>
 #include <ash.h>
+#include <klog.h>
 
 typedef unsigned int devregtr;
 
@@ -113,19 +114,24 @@ extern void p5mm();
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
     char     *s       = msg;
-    devregtr *base    = (devregtr *)(TERM0ADDR);
+    devregtr *base    = (devregtr *)(TERM0ADDR + 12);
     devregtr *command = base;
     devregtr  status;
 
+    klog_print("Sto per fare passeren dentro print\n");
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
+
+    klog_print("\nSto per fare il while dentro print\n");
     while (*s != EOS) {
-        devregtr value[2] = {PRINTCHR | (((devregtr)*s) << 8), 0 };
+        devregtr value[2] = { PRINTCHR | (((devregtr)*s) << 8), 0 };
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
+        klog_print("DOIO dentro print fatta\n");
         if (status != 0 || (value[0] & TERMSTATMASK) != RECVD) {
             PANIC();
         }
         s++;
     }
+    klog_print("Sto per fare la verhogen dentro la print\n");
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
 }
 
@@ -147,9 +153,12 @@ void uTLB_RefillHandler() {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {
+    // Questo funziona correttamente
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
+    klog_print("Sto per fare la print\n");
     print("p1 v(sem_testsem)\n");
+    klog_print("print FATTA YEEEEEEEEEEEEEEEEE\n");
 
     /* set up states of the other processes */
 

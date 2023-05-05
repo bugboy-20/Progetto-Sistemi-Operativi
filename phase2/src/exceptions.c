@@ -4,12 +4,16 @@
 #include <pandos_const.h>
 #include <pandos_types.h>
 #include <systemcall.h>
+#include <klog.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 
 void exception_handler()
 {
     const int exception_code = CAUSE_GET_EXCCODE(EXCEPTION_STATE->cause);
+    klog_print("Exception code: ");
+    klog_print_hex(exception_code);
+    klog_print("\n");
 
     switch (exception_code)
     {
@@ -36,7 +40,7 @@ void exception_handler()
 
     case EXC_SYS:
         // call to syscall excpetion handler
-        syscall_handler(EXCEPTION_STATE->reg_a0, (void*) EXCEPTION_STATE->reg_a1, (void*) EXCEPTION_STATE->reg_a2, (void*) EXCEPTION_STATE->reg_a3);
+        syscall_handler(EXCEPTION_STATE->reg_a0, EXCEPTION_STATE->reg_a1, EXCEPTION_STATE->reg_a2, EXCEPTION_STATE->reg_a3);
         break;
 
     default:
@@ -46,9 +50,21 @@ void exception_handler()
     }
 }
 
-void syscall_handler(int a0, void *a1, void *a2, void *a3)
+void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
-
+    klog_print("Dentro syscallhandler\n");
+    klog_print("A0: ");
+    klog_print_hex(a0);
+    klog_print("\n");
+    klog_print("A1: ");
+    klog_print_hex(a1);
+    klog_print("\n");
+    klog_print("A2: ");
+    klog_print_hex(a2);
+    klog_print("\n");
+    klog_print("A3: ");
+    klog_print_hex(a3);
+    klog_print("\n");
     if ((EXCEPTION_STATE->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
         // process is in user mode then trigger program trap exception
@@ -74,13 +90,16 @@ void syscall_handler(int a0, void *a1, void *a2, void *a3)
         terminate_process(*(int *)a1);
         break;
     case PASSEREN:
+        klog_print("Caso passeren in syscall handler\n");
         passeren((int *)a1);
         break;
     case VERHOGEN:
+        klog_print("Caso verhogen in syscall handler\n");
         verhogen((int *)a1);
         break;
     case DOIO:
-        do_io((int *)a1, (int *)a2);
+        klog_print("Caso do_io in syscall handler\n");
+        do_io((unsigned int*) a1, (unsigned int) a2);
         break;
     // Michele
     case GETTIME:
@@ -106,12 +125,15 @@ void syscall_handler(int a0, void *a1, void *a2, void *a3)
 
 void pass_up_or_die(int exep_code)
 {
+    klog_print("Dentro pass_up_or_die");
     if (current_proc->p_supportStruct == NULL)
     {
+        klog_print(" -> current_proc->p_supportStruct == NULL, sto per fare terminate_process\n");
         terminate_process(current_proc->p_pid);
     }
     else
     {
+        klog_print(" -> current_proc->p_supportStruct != NULL");
         current_proc->p_supportStruct->sup_exceptState[exep_code] = *EXCEPTION_STATE;
         context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
         LDCXT(exep_context.stackPtr, exep_context.status, exep_context.pc);

@@ -1,7 +1,7 @@
 #ifndef EXCEPTIONS_H
 #define EXCEPTIONS_H
 // Handler for system calls
-void syscall_handler(int, void *, void *, void *);
+void syscall_handler(unsigned int, unsigned int, unsigned int, unsigned int);
 
 // Handler for exception
 void exception_handler();
