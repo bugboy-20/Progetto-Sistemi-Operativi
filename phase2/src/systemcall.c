@@ -19,6 +19,58 @@ HIDDEN pcb_t *get_proc(int pid);
 
 static devregarea_t *devregarea = (devregarea_t *)RAMBASEADDR;
 
+void P(int *semAddr)
+{
+    // current process goes from running to blocked
+    if (*semAddr == 0)
+    {
+        // TODO: rimuovere current_proc dalla ready_q?
+        insertBlocked(semAddr, current_proc);
+        // current_proc = NULL;
+        soft_block_count += 1;
+    }
+    // unblock the first blocked process
+    else
+    {
+        pcb_t *proc = removeBlocked(semAddr);
+        if (proc == NULL)
+        {
+            // no other proc is blocked, resource given to current proc
+            (*semAddr) -= 1;
+        }
+        else
+        {
+            insertProcQ(&ready_q, proc);
+            soft_block_count -= 1;
+        }
+    }
+}
+
+void V(int *semAddr)
+{
+    if (*semAddr == 1)
+    {
+        // when semAddr = 1, V is blocking
+        insertBlocked(semAddr, current_proc);
+        current_proc = NULL;
+        soft_block_count += 1;
+    }
+    else
+    {
+        pcb_t *proc = removeBlocked(semAddr);
+        if (proc == NULL)
+        {
+            // no proc is blocked, resource given to current proc
+            (*semAddr) += 1;
+        }
+        else
+        {
+            insertProcQ(&ready_q, proc);
+            soft_block_count -= 1;
+        }
+    }
+}
+
 // TODO capire dove metterla
 // Copia `state_t` struct
 void copy_state(state_t *dest, const state_t *source)
@@ -91,7 +143,10 @@ void terminate_process(int pid)
     pcb_t *dead_proc = get_proc(pid);
     terminate_recursively(dead_proc);
 
-    syscall_end(!TERMINATED, !BLOCKING);
+    if (dead_proc == current_proc)
+        syscall_end(TERMINATED, !BLOCKING);
+    else
+        syscall_end(!TERMINATED, !BLOCKING);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
@@ -167,7 +222,7 @@ void verhogen(int *semAddr)
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
-void do_io(int *cmdAddr, int cmdValues)
+void do_io(int *cmdAddr, int *cmdValues)
 {
     klog_print("Dentro do_io\n");
     // istruzioni non chiare, non so come implementarla
@@ -193,7 +248,12 @@ void do_io(int *cmdAddr, int cmdValues)
     klog_print("doio finita\n");
     syscall_end(!TERMINATED, BLOCKING);
     */
-    for (int n = 0; n < 8; n++)
+    int *status = &cmdAddr[0];
+    int *command = &cmdAddr[1];
+    value_bak = cmdValues;
+
+
+    for (int n = 0; n < DEVPERINT; n++)
     {
         klog_print_hex(cmdAddr);
         klog_print("\n");
@@ -202,34 +262,35 @@ void do_io(int *cmdAddr, int cmdValues)
         klog_print_hex(&devregarea->devreg[4][n].term.recv_command);
         klog_print("\n");
         // Terminals are the 4th device
-        if (&devregarea->devreg[4][n].term.transm_command == (unsigned int*) cmdAddr)
+        if (&devregarea->devreg[4][n].term.transm_command == (unsigned int *)command)
         {
             klog_print("DENTRO IF TRANSMISSIONE");
             klog_print(cmdValues);
             klog_print_hex(cmdValues);
 
             // la richiesta di IO blocca sempre il processo
-            int *devSemAddr = (int *)dev_sem_addr(4+1, n);
-            passeren(devSemAddr);
+            int *devSemAddr = (int *)dev_sem_addr(7, n);
+            P(devSemAddr);
 
-            *cmdAddr = cmdValues;
+            *command = *cmdValues;
             klog_print("assegnamento cmdvalues fatto\n");
         }
-        if (&devregarea->devreg[4][n].term.recv_command == (unsigned int*) cmdAddr)
+        if (&devregarea->devreg[4][n].term.recv_command == (unsigned int *)command)
         {
             klog_print("DENTRO IF RICEZIONE");
             klog_print(cmdValues);
             klog_print_hex(cmdValues);
 
             // la richiesta di IO blocca sempre il processo
-            int *devSemAddr = (int *)dev_sem_addr(4, n);
-            passeren(devSemAddr);
+            int *devSemAddr = (int *)dev_sem_addr(7 + 1, n);
+            P(devSemAddr);
 
-            *cmdAddr = cmdValues;
+            *command = cmdValues[1];
             klog_print("assegnamento cmdvalues fatto\n");
         }
     }
     klog_print("Fine do_io\n");
+    current_proc->p_s.reg_v0 = 0;
     syscall_end(!TERMINATED, BLOCKING);
 }
 
@@ -292,15 +353,14 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
         scheduler();
         return;
     }
-    state_t *state = (state_t *)BIOSDATAPAGE;
 
-    state->pc_epc += WORDLEN;
+    EXCEPTION_STATE->pc_epc += WORDLEN;
     if (blocking)
     {
         klog_print("Prima di assegnamento");
         // TODO con questa istruzione viene dato una eccezione 6
         //copy_state(&current_proc->p_s, state);
-        // current_proc->p_s = *state;
+        current_proc->p_s = *EXCEPTION_STATE;
         klog_print("Dopo di assegnamento");
         // TODO: aggiornare il CPU time per il processo corrente
         // TODO: capire come fare a fare la transition da uno stato ready a blocked
@@ -308,7 +368,7 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     }
     else
     {
-        LDST(state);
+        LDST(EXCEPTION_STATE);
     }
 }
 
@@ -323,7 +383,8 @@ HIDDEN void terminate_recursively(pcb_t *proc)
 
     // TODO: incrementare il semaforo giusto se necessario
 
-    process_count -= 1;
+    // WORKAROUND patch per farlo stampare
+    // process_count -= 1;
 
     if (proc == current_proc)
     {

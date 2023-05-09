@@ -14,6 +14,7 @@ extern struct list_head ready_q;
 extern int sem_table[NUMSEM];
 extern int pseudoclock_semaphore;
 extern cpu_t start_time;
+extern int *value_bak;
 
 
 

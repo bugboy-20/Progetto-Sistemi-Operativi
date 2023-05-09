@@ -7,6 +7,7 @@
 #include <klog.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
+#include <scheduler.h>
 
 void exception_handler()
 {
@@ -45,7 +46,9 @@ void exception_handler()
 
     default:
         // call to program trap exception handler or else
-        pass_up_or_die(GENERALEXCEPT);
+        // WORKAROUND per evitare di chiamare la terminate_process
+        // pass_up_or_die(GENERALEXCEPT);
+        scheduler();
         break;
     }
 }
@@ -129,7 +132,7 @@ void pass_up_or_die(int exep_code)
     if (current_proc->p_supportStruct == NULL)
     {
         klog_print(" -> current_proc->p_supportStruct == NULL, sto per fare terminate_process\n");
-        terminate_process(current_proc->p_pid);
+        terminate_process(0);
     }
     else
     {

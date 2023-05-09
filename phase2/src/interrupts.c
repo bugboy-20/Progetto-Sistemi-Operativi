@@ -12,12 +12,12 @@
 #include <scheduler.h>
 #include <systemcall.h>
 
-#define IDBM 0x10000040        // Interrupt Devices BitMap
-#define TERMINALBM IDBM + 0x10 // Interrupt Line 7 Interrupting Devices Bit Map
-#define PRINTERBM IDBM + 0x0C  // Interrupt Line 6 Interrupting Devices Bit Map
-#define NETWORKBM IDBM + 0x08  // Interrupt Line 5 Interrupting Devices Bit Map
-#define FLASHBM IDBM + 0x04    // Interrupt Line 4 Interrupting Devices Bit Map
-#define DISKBM IDBM + 0x00     // Interrupt Line 3 Interrupting Devices Bit Map
+#define IDBM 0x10000040          // Interrupt Devices BitMap
+#define TERMINALBM (IDBM + 0x10) // Interrupt Line 7 Interrupting Devices Bit Map
+#define PRINTERBM (IDBM + 0x0C)  // Interrupt Line 6 Interrupting Devices Bit Map
+#define NETWORKBM (IDBM + 0x08)  // Interrupt Line 5 Interrupting Devices Bit Map
+#define FLASHBM (IDBM + 0x04)    // Interrupt Line 4 Interrupting Devices Bit Map
+#define DISKBM (IDBM + 0x00)     // Interrupt Line 3 Interrupting Devices Bit Map
 
 #define RT_STATUS 0xFF
 
@@ -28,10 +28,11 @@
 
 #define devAddrBase(IntlineNo, DevNo) (memaddr)(0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10))
 
-static inline int getDevNo(const int bitMap)
+static inline int getDevNo(unsigned int *bitMap_address)
 {
+    unsigned int bitMap = *bitMap_address;
     for (char i = 0; i < 8; i++)
-        if (1 << i & bitMap)
+        if ((1 << i) & bitMap)
             return i;
 
     return -1; // Error
@@ -80,7 +81,7 @@ void termInterruptHandler(int IntlineNo, int DevNo)
     if ((term->transm_status & RT_STATUS) > READY)
     {
         // Save off the status code from the device’s device register
-        status = term->transm_status;
+        status = term->transm_status & 0xF;
         // Acknowledge the outstanding interrupt. This is accomplished by writing the acknowledge command code in the interrupting device’s device register
         term->transm_command = ACK;
         // Perform a V operation on the Nucleus maintained semaphore associated with this (sub)device. This operation should unblock the process (pcb) which initiated this I/O operation and then requested to wait for its completion via a SYS5 operation.
@@ -97,14 +98,16 @@ void termInterruptHandler(int IntlineNo, int DevNo)
     }
 
     pcb_t *proc = headBlocked(devSem);
-    verhogen(devSem);
+    V(devSem);
     // If this process is present
     if (proc != NULL)
     {
         // Place the stored off status code in the newly unblocked pcb’s v0 register.
-        proc->p_s.reg_v0 = status;
+        proc->p_s.reg_v0 = 0;
+        value_bak[0] = status;
+
         // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
-        insertProcQ(&ready_q, proc);
+        // insertProcQ(&ready_q, proc);
     }
     // Return control to the Current Process: Perform a LDST on the saved exception state
     state_t *state = EXCEPTION_STATE;
@@ -166,11 +169,11 @@ void interrupt_handler()
     }
     // Line 3-7, these ar the devices
     else if (cause & DISKINTERRUPT)
-        dtpInterruptHandler(DISKINT, getDevNo(DISKBM));
+        dtpInterruptHandler(DISKINT, getDevNo((memaddr *)DISKBM));
     else if (cause & FLASHINTERRUPT)
-        dtpInterruptHandler(FLASHINT, getDevNo(FLASHBM));
+        dtpInterruptHandler(FLASHINT, getDevNo((memaddr *)FLASHBM));
     else if (cause & PRINTINTERRUPT)
-        dtpInterruptHandler(PRNTINT, getDevNo(PRINTERBM));
+        dtpInterruptHandler(PRNTINT, getDevNo((memaddr *)PRINTERBM));
     else if (cause & TERMINTERRUPT)
-        termInterruptHandler(TERMINT, getDevNo(TERMINALBM));
+        termInterruptHandler(TERMINT, getDevNo((memaddr *)TERMINALBM));
 }

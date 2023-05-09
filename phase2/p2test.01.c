@@ -114,7 +114,7 @@ extern void p5mm();
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
     char     *s       = msg;
-    devregtr *base    = (devregtr *)(TERM0ADDR + 12);
+    devregtr *base    = (devregtr *)(TERM0ADDR + 8);
     devregtr *command = base;
     devregtr  status;
 
@@ -123,7 +123,7 @@ void print(char *msg) {
 
     klog_print("\nSto per fare il while dentro print\n");
     while (*s != EOS) {
-        devregtr value[2] = { PRINTCHR | (((devregtr)*s) << 8), 0 };
+        devregtr value[2] = { 0, PRINTCHR | (((devregtr)*s) << 8) };
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
         klog_print("DOIO dentro print fatta\n");
         if (status != 0 || (value[0] & TERMSTATMASK) != RECVD) {

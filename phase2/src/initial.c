@@ -19,6 +19,7 @@ struct list_head ready_q;
 int sem_table[NUMSEM];
 int pseudoclock_semaphore;
 cpu_t start_time;
+int *value_bak;
 
 int main() {
     // Inizialize the Pass Up Vector

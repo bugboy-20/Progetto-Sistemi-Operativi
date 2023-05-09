@@ -4,6 +4,9 @@
 #include <pandos_types.h>
 #include <types.h>
 
+void P(int *);
+void V(int *);
+
 // SYS1
 void create_process(state_t *, struct support_t *, nsd_t *);
 
@@ -17,7 +20,7 @@ void passeren(int *semAddr);
 void verhogen(int *semAddr);
 
 // SYS5
-void do_io(int *cmdAddr, int cmdValues);
+void do_io(int *cmdAddr, int *cmdValues);
 
 // SYS6
 void get_cpu_time();
