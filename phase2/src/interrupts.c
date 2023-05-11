@@ -166,6 +166,8 @@ void interrupt_handler()
         pseudoclock_semaphore = 0;
         // Return control to the Current Process with LDST
         // If not present return to the scheduler, which will do WAIT() or HALT()
+        klog_print("siamo dentroo exeption->timer:\n");
+        KLOG_PRETTI_PRINT("crrent",current_proc);
         if (current_proc != NULL)
             LDST(EXCEPTION_STATE);
         else

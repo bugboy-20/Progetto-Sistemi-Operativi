@@ -8,6 +8,10 @@
 void scheduler()
 {
     klog_print("Scheduler");
+    klog_print("\nProcess count: ");
+    klog_print_hex(process_count);
+    klog_print("\nSoft block: ");
+    klog_print_hex(soft_block_count);
     if (!emptyProcQ(&ready_q))
     {
         klog_print("!emptyProcQ(&ready_q)\n");

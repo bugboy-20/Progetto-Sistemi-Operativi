@@ -47,27 +47,27 @@ void exception_handler()
     default:
         // call to program trap exception handler or else
         // WORKAROUND per evitare di chiamare la terminate_process
-        // pass_up_or_die(GENERALEXCEPT);
-        scheduler();
+        pass_up_or_die(GENERALEXCEPT);
+        //scheduler();
         break;
     }
 }
 
 void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
-    klog_print("Dentro syscallhandler\n");
-    klog_print("A0: ");
-    klog_print_hex(a0);
-    klog_print("\n");
-    klog_print("A1: ");
-    klog_print_hex(a1);
-    klog_print("\n");
-    klog_print("A2: ");
-    klog_print_hex(a2);
-    klog_print("\n");
-    klog_print("A3: ");
-    klog_print_hex(a3);
-    klog_print("\n");
+    // klog_print("Dentro syscallhandler\n");
+    // klog_print("A0: ");
+    // klog_print_hex(a0);
+    // klog_print("\n");
+    // klog_print("A1: ");
+    // klog_print_hex(a1);
+    // klog_print("\n");
+    // klog_print("A2: ");
+    // klog_print_hex(a2);
+    // klog_print("\n");
+    // klog_print("A3: ");
+    // klog_print_hex(a3);
+    // klog_print("\n");
     if ((EXCEPTION_STATE->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
         // process is in user mode then trigger program trap exception
@@ -93,15 +93,15 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
         terminate_process(*(int *)a1);
         break;
     case PASSEREN:
-        klog_print("Caso passeren in syscall handler\n");
+        // klog_print("Caso passeren in syscall handler\n");
         passeren((int *)a1);
         break;
     case VERHOGEN:
-        klog_print("Caso verhogen in syscall handler\n");
+        // klog_print("Caso verhogen in syscall handler\n");
         verhogen((int *)a1);
         break;
     case DOIO:
-        klog_print("Caso do_io in syscall handler\n");
+        // klog_print("Caso do_io in syscall handler\n");
         do_io((unsigned int*) a1, (unsigned int) a2);
         break;
     // Michele

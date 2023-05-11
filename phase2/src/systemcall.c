@@ -108,7 +108,7 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
     // pid is the address of the pcb itself
     new_proc->p_pid = (unsigned int)new_proc;
 
-    // new_proc->p_s = *statep;
+    new_proc->p_s = *statep;
     new_proc->p_time = 0;
     new_proc->p_semAdd = NULL;
 
@@ -254,12 +254,12 @@ void do_io(int *cmdAddr, int *cmdValues)
 
     for (int n = 0; n < DEVPERINT; n++)
     {
-        klog_print_hex(cmdAddr);
-        klog_print("\n");
-        klog_print_hex(&devregarea->devreg[4][n].term.transm_command);
-        klog_print("\n");
-        klog_print_hex(&devregarea->devreg[4][n].term.recv_command);
-        klog_print("\n");
+        // klog_print_hex(cmdAddr);
+        // klog_print("\n");
+        // klog_print_hex(&devregarea->devreg[4][n].term.transm_command);
+        // klog_print("\n");
+        // klog_print_hex(&devregarea->devreg[4][n].term.recv_command);
+        // klog_print("\n");
         // Terminals are the 4th device
         if (&devregarea->devreg[4][n].term.transm_command == (unsigned int *)command)
         {
@@ -349,6 +349,7 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
 {
     if (terminated)
     {
+        current_proc=NULL;
         scheduler();
         return;
     }
@@ -361,6 +362,7 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
         //copy_state(&current_proc->p_s, state);
         current_proc->p_s = *EXCEPTION_STATE;
         klog_print("Dopo di assegnamento");
+        current_proc=NULL;
         // TODO: aggiornare il CPU time per il processo corrente
         // TODO: capire come fare a fare la transition da uno stato ready a blocked
         scheduler();
@@ -383,10 +385,12 @@ HIDDEN void terminate_recursively(pcb_t *proc)
     // TODO: incrementare il semaforo giusto se necessario
 
     // WORKAROUND patch per farlo stampare
-    // process_count -= 1;
+    process_count -= 1;
 
     if (proc == current_proc)
     {
+        freePcb(proc);
+        current_proc = NULL;
         // running state, don't have to do anything (?)
     }
     else if (outProcQ(&ready_q, proc) == NULL) // ready state
