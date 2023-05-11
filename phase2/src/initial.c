@@ -1,7 +1,7 @@
 #include <ash.h>
 #include <pcb.h>
 #include <ns.h>
-#include <initial.h>
+#include <pandos_utils.h>
 #include <scheduler.h>
 #include <exceptions.h>
 #include <list.h>
@@ -74,12 +74,3 @@ int main() {
     return 0;
 }
 
-void *memcpy(void *dest, const void * src, size_t n) {
-    char byte;
-    for(int i=0; i<n; i++) {
-        byte = *((char*) src+i);
-        *((char*) dest+i) = byte;
-
-    }
-    return dest;
-}

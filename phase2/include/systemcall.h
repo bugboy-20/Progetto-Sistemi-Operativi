@@ -3,6 +3,7 @@
 
 #include <pandos_types.h>
 #include <types.h>
+#include <pandos_utils.h>
 
 void P(int *);
 void V(int *);

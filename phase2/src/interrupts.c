@@ -1,5 +1,6 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
 #include "klog.h"
+#include <pandos_utils.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 #include <umps3/umps/const.h>
@@ -7,7 +8,6 @@
 #include <pandos_const.h>
 #include <pandos_types.h>
 #include <ash.h>
-#include <initial.h>
 #include <list.h>
 #include <pcb.h>
 #include <scheduler.h>
