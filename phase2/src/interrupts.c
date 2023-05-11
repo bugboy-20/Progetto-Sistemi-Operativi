@@ -50,7 +50,7 @@ void dtpInterruptHandler(int IntlineNo, int DevNo)
     // Perform a V operation on the Nucleus maintained semaphore associated with this (sub)device. This operation should unblock the process (pcb) which initiated this I/O operation and then requested to wait for its completion via a SYS5 operation.
     int *devSem = (int *)dev_sem_addr(IntlineNo, DevNo);
     pcb_t *proc = headBlocked(devSem);
-    verhogen(devSem);
+    V(devSem);
     // If this process is present
     if (proc != NULL)
     {
@@ -107,9 +107,15 @@ void termInterruptHandler(int IntlineNo, int DevNo)
         // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
         // insertProcQ(&ready_q, proc);
     }
-    // Return control to the Current Process: Perform a LDST on the saved exception state
-    //state_t *state = EXCEPTION_STATE;
-    LDST(EXCEPTION_STATE);
+    else
+    {
+        // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
+        soft_block_count -= 1;
+    }
+    if (current_proc != NULL)
+        LDST(EXCEPTION_STATE); // Return control to the Current Process: Perform a LDST on the saved exception state
+    else
+        scheduler(); // Call the scheduler;
 }
 
 /*

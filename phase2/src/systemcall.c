@@ -50,7 +50,6 @@ void V(int *semAddr)
     {
         // when semAddr = 1, V is blocking
         insertBlocked(semAddr, current_proc);
-        current_proc = NULL;
         soft_block_count += 1;
     }
     else
@@ -130,7 +129,6 @@ void passeren(int *semAddr)
         klog_print("*semAddr==0\n");
         // TODO: rimuovere current_proc dalla ready_q?
         insertBlocked(semAddr, current_proc);
-        current_proc = NULL;
         soft_block_count += 1;
         //  schedule the next process
         syscall_end(!TERMINATED, BLOCKING);
@@ -166,7 +164,6 @@ void verhogen(int *semAddr)
     {
         // when semAddr = 1, V is blocking
         insertBlocked(semAddr, current_proc);
-        current_proc = NULL;
         soft_block_count += 1;
         //  schedule the next process
         syscall_end(!TERMINATED, BLOCKING);
@@ -211,7 +208,6 @@ void do_io(int *cmdAddr, int *cmdValues)
     // la richiesta di IO blocca sempre il processo
     insertBlocked((int *)dev_sem_addr(type, n), current_proc);
     klog_print("Inserito processo nei bloccati\n");
-    current_proc = NULL;
     soft_block_count += 1;
 
     // TODO: capire se questa è l'operazione giusta da fare
