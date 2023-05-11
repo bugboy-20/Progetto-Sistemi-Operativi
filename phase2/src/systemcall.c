@@ -25,7 +25,6 @@ void P(int *semAddr)
     {
         // TODO: rimuovere current_proc dalla ready_q?
         insertBlocked(semAddr, current_proc);
-        // current_proc = NULL;
         soft_block_count += 1;
     }
     // unblock the first blocked process
@@ -68,30 +67,6 @@ void V(int *semAddr)
             soft_block_count -= 1;
         }
     }
-}
-
-// TODO capire dove metterla
-// Copia `state_t` struct
-void copy_state(state_t *dest, const state_t *source)
-{
-    klog_print("Inizio copia di state_t\n");
-    dest->entry_hi = source->entry_hi;
-    klog_print("<->");
-    dest->cause = source->cause;
-    klog_print("<->");
-    dest->status = source->status;
-    klog_print("<->");
-    dest->pc_epc = source->pc_epc;
-    klog_print("<->");
-    for (int i = 0; i < STATE_GPR_LEN; i++)
-    {
-        dest->gpr[i] = source->gpr[i];
-    }
-    klog_print("<->");
-    dest->hi = source->hi;
-    klog_print("<->");
-    dest->lo = source->lo;
-    klog_print("Fine copia di state_t\n");
 }
 
 void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
