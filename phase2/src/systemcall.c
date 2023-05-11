@@ -132,7 +132,7 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 
 void terminate_process(int pid)
 {
-    if (pid == 0)
+    if (pid == 0 || current_proc->p_pid == pid)
     {
         // termino il processo corrente e tutta la sua progenie
         terminate_recursively(current_proc);
@@ -142,9 +142,6 @@ void terminate_process(int pid)
     pcb_t *dead_proc = get_proc(pid);
     terminate_recursively(dead_proc);
 
-    if (dead_proc == current_proc)
-        syscall_end(TERMINATED, !BLOCKING);
-    else
         syscall_end(!TERMINATED, !BLOCKING);
 }
 
