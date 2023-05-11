@@ -7,7 +7,6 @@
 #include <initial.h>
 #include <scheduler.h>
 #include <pandos_const.h>
-#include <TODO.h>
 #include <klog.h>
 
 #define BLOCKING true
@@ -272,7 +271,7 @@ void do_io(int *cmdAddr, int *cmdValues)
             int *devSemAddr = (int *)dev_sem_addr(7, n);
             P(devSemAddr);
 
-            *command = *cmdValues;
+            *command = cmdValues[1];
             klog_print("assegnamento cmdvalues fatto\n");
         }
         if (&devregarea->devreg[4][n].term.recv_command == (unsigned int *)command)

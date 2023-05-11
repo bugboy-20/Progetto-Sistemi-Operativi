@@ -1,4 +1,5 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
+#include "klog.h"
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 #include <umps3/umps/const.h>
@@ -110,8 +111,8 @@ void termInterruptHandler(int IntlineNo, int DevNo)
         // insertProcQ(&ready_q, proc);
     }
     // Return control to the Current Process: Perform a LDST on the saved exception state
-    state_t *state = EXCEPTION_STATE;
-    LDST(state);
+    //state_t *state = EXCEPTION_STATE;
+    LDST(EXCEPTION_STATE);
 }
 
 /*
@@ -129,6 +130,9 @@ void termInterruptHandler(int IntlineNo, int DevNo)
 void interrupt_handler()
 {
     unsigned int cause = EXCEPTION_STATE->cause; // Custom system for getting cause
+    klog_print("cause: ");
+    klog_print_hex(cause);
+    klog_print("\n");
 
     // ignoring interrupt line 0
 
