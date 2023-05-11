@@ -39,9 +39,6 @@ static inline int getDevNo(unsigned int *bitMap_address)
     return -1; // Error
 }
 
-// TODO workaround, bisogna capire perchè non lo trova da solo il compilatore
-// extern void verhogen(int *semAddr);
-
 void dtpInterruptHandler(int IntlineNo, int DevNo)
 {
     // Calculate the address for this device's register
@@ -157,7 +154,6 @@ void interrupt_handler()
         pcb_t *proc;
         while ((proc = removeBlocked(&pseudoclock_semaphore)) != NULL)
         {
-            // TODO: direi che devo metterli nella ready q?
             insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
         }
