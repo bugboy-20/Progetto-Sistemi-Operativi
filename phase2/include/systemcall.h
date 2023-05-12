@@ -5,8 +5,8 @@
 #include <types.h>
 #include <pandos_utils.h>
 
-void P(int *);
-void V(int *);
+bool P(int *);
+bool V(int *);
 
 // SYS1
 void create_process(state_t *, struct support_t *, nsd_t *);

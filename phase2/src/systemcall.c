@@ -18,7 +18,7 @@ HIDDEN pcb_t *get_proc(int pid);
 
 static devregarea_t *devregarea = (devregarea_t *)RAMBASEADDR;
 
-void P(int *semAddr)
+bool P(int *semAddr)
 {
     // current process goes from running to blocked
     if (*semAddr == 0)
@@ -26,6 +26,7 @@ void P(int *semAddr)
         // TODO: rimuovere current_proc dalla ready_q?
         insertBlocked(semAddr, current_proc);
         soft_block_count += 1;
+        return BLOCKING;
     }
     // unblock the first blocked process
     else
@@ -35,22 +36,25 @@ void P(int *semAddr)
         {
             // no other proc is blocked, resource given to current proc
             (*semAddr) -= 1;
+            return !BLOCKING;
         }
         else
         {
             insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
+            return BLOCKING;
         }
     }
 }
 
-void V(int *semAddr)
+bool V(int *semAddr)
 {
     if (*semAddr == 1)
     {
         // when semAddr = 1, V is blocking
         insertBlocked(semAddr, current_proc);
         soft_block_count += 1;
+        return BLOCKING;
     }
     else
     {
@@ -59,11 +63,13 @@ void V(int *semAddr)
         {
             // no proc is blocked, resource given to current proc
             (*semAddr) += 1;
+            return !BLOCKING;
         }
         else
         {
             insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
+            return BLOCKING;
         }
     }
 }
@@ -122,71 +128,14 @@ void terminate_process(int pid)
 // questa syscall e` bloccante, capitolo 3.5.11
 void passeren(int *semAddr)
 {
-    klog_print("passeren->");
-    // current process goes from running to blocked
-    if (*semAddr == 0)
-    {
-        klog_print("*semAddr==0\n");
-        // TODO: rimuovere current_proc dalla ready_q?
-        insertBlocked(semAddr, current_proc);
-        soft_block_count += 1;
-        //  schedule the next process
-        syscall_end(!TERMINATED, BLOCKING);
-    }
-    // unblock the first blocked process
-    else
-    {
-        klog_print("*semAddr!=0");
-        pcb_t *proc = removeBlocked(semAddr);
-        if (proc == NULL)
-        {
-            klog_print("->proc==NULL\n");
-            // no other proc is blocked, resource given to current proc
-            (*semAddr) -= 1;
-            syscall_end(!TERMINATED, !BLOCKING);
-        }
-        else
-        {
-            klog_print("->proc!=NULL\n");
-            insertProcQ(&ready_q, proc);
-            soft_block_count -= 1;
-            syscall_end(!TERMINATED, BLOCKING);
-        }
-    }
+    bool is_blocking = P(semAddr);
+    syscall_end(!TERMINATED, is_blocking);
 }
 
 void verhogen(int *semAddr)
 {
-    klog_print("semAddr: ");
-    klog_print_hex(*semAddr);
-    klog_print("\n");
-    if (*semAddr == 1)
-    {
-        // when semAddr = 1, V is blocking
-        insertBlocked(semAddr, current_proc);
-        soft_block_count += 1;
-        //  schedule the next process
-        syscall_end(!TERMINATED, BLOCKING);
-    }
-    else
-    {
-        pcb_t *proc = removeBlocked(semAddr);
-        if (proc == NULL)
-        {
-            // no proc is blocked, resource given to current proc
-            (*semAddr) += 1;
-            klog_print("semAddr incrementato: ");
-            klog_print_hex(*semAddr);
-            klog_print("\n");
-            syscall_end(!TERMINATED, !BLOCKING);
-        }
-        else
-        {
-            insertProcQ(&ready_q, proc);
-            soft_block_count -= 1;
-            syscall_end(!TERMINATED, BLOCKING);
-        }
-    }
+    bool is_blocking = V(semAddr);
+    syscall_end(!TERMINATED, is_blocking);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
