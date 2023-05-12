@@ -115,7 +115,7 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
         get_support_data();
         break;
     case GETPROCESSID:
-        get_process_id(*(bool *)a1);
+        get_process_id((bool)a1);
         break;
     case GETCHILDREN:
         get_children((int *)a1, *(int *)a2);
