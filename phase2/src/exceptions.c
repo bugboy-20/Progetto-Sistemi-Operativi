@@ -90,7 +90,7 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
         create_process((state_t *)a1, (struct support_t *)a2, (nsd_t *)a3);
         break;
     case TERMPROCESS:
-        terminate_process(*(int *)a1);
+        terminate_process((int)a1);
         break;
     case PASSEREN:
         // klog_print("Caso passeren in syscall handler\n");
