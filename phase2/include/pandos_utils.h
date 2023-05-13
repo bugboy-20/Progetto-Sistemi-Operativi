@@ -1,5 +1,5 @@
 #ifndef UTILS_H
-#define UTILS_H 
+#define UTILS_H
 // funzioni e macro utili un po' ovunque
 
 #include <pandos_const.h>
@@ -29,6 +29,11 @@ typedef int size_t;
 // copia porzione di memoria
 // possibile rischio di buffer overflow
 void *memcpy(void *dest, const void * src, size_t n);
+
+
+// Definition of binary semaphore operation
+bool P(int *);
+bool V(int *);
 
 
 #endif /* UTILS_H */
