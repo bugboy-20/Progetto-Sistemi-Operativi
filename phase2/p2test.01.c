@@ -631,7 +631,7 @@ void p5b() {
 void p6() {
     print("p6 starts\n");
 
-    SYSCALL(1, 0, 0, 0); /* should cause termination because p6 has no
+    SYSCALL(11, 0, 0, 0); /* should cause termination because p6 has no
            trap vector */
 
     print("error: p6 alive after SYS9() with no trap vector\n");
