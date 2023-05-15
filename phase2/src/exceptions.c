@@ -12,9 +12,9 @@
 void exception_handler()
 {
     const int exception_code = CAUSE_GET_EXCCODE(EXCEPTION_STATE->cause);
-    klog_print("Exception code: ");
-    klog_print_hex(exception_code);
-    klog_print("\n");
+    // klog_print("Exception code: ");
+    // klog_print_hex(exception_code);
+    // klog_print("\n");
 
     switch (exception_code)
     {
@@ -55,19 +55,6 @@ void exception_handler()
 
 void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
-    // klog_print("Dentro syscallhandler\n");
-    // klog_print("A0: ");
-    // klog_print_hex(a0);
-    // klog_print("\n");
-    // klog_print("A1: ");
-    // klog_print_hex(a1);
-    // klog_print("\n");
-    // klog_print("A2: ");
-    // klog_print_hex(a2);
-    // klog_print("\n");
-    // klog_print("A3: ");
-    // klog_print_hex(a3);
-    // klog_print("\n");
     if ((EXCEPTION_STATE->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
         // process is in user mode then trigger program trap exception
@@ -93,15 +80,12 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
         terminate_process((int)a1);
         break;
     case PASSEREN:
-        // klog_print("Caso passeren in syscall handler\n");
         passeren((int *)a1);
         break;
     case VERHOGEN:
-        // klog_print("Caso verhogen in syscall handler\n");
         verhogen((int *)a1);
         break;
     case DOIO:
-        // klog_print("Caso do_io in syscall handler\n");
         do_io((int *)a1, (int *)a2);
         break;
     // Michele
@@ -128,15 +112,15 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
 
 void pass_up_or_die(int exep_code)
 {
-    klog_print("Dentro pass_up_or_die");
+    // klog_print("Dentro pass_up_or_die\n");
     if (current_proc->p_supportStruct == NULL)
     {
-        klog_print(" -> current_proc->p_supportStruct == NULL, sto per fare terminate_process\n");
+        // klog_print("p_supportStruct == NULL, terminate_process\n");
         terminate_process(0);
     }
     else
     {
-        klog_print(" -> current_proc->p_supportStruct != NULL");
+        // klog_print("p_supportStruct != NULL\n");
         current_proc->p_supportStruct->sup_exceptState[exep_code] = *EXCEPTION_STATE;
         context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
         LDCXT(exep_context.stackPtr, exep_context.status, exep_context.pc);

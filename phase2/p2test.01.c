@@ -118,20 +118,16 @@ void print(char *msg) {
     devregtr *command = base;
     devregtr  status;
 
-    klog_print("Sto per fare passeren dentro print\n");
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
 
-    klog_print("\nSto per fare il while dentro print\n");
     while (*s != EOS) {
         devregtr value[2] = { 0, PRINTCHR | (((devregtr)*s) << 8) };
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-        klog_print("DOIO dentro print fatta\n");
         if (status != 0 || (value[0] & TERMSTATMASK) != RECVD) {
             PANIC();
         }
         s++;
     }
-    klog_print("Sto per fare la verhogen dentro la print\n");
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
 }
 
@@ -156,9 +152,7 @@ void test() {
     // Questo funziona correttamente
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    klog_print("Sto per fare la print\n");
     print("p1 v(sem_testsem)\n");
-    klog_print("print FATTA YEEEEEEEEEEEEEEEEE\n");
 
     /* set up states of the other processes */
 

@@ -7,14 +7,12 @@
 
 void scheduler()
 {
-    klog_print("Scheduler");
-    klog_print("\nProcess count: ");
-    klog_print_hex(process_count);
-    klog_print("\nSoft block: ");
-    klog_print_hex(soft_block_count);
+    // klog_print("Scheduler");
+    // KLOG_PRETTI_PRINT("Process count: ", process_count);
+    // KLOG_PRETTI_PRINT("Soft block: ", soft_block_count);
     if (!emptyProcQ(&ready_q))
     {
-        klog_print("!emptyProcQ(&ready_q)\n");
+        // klog_print("not empty ready_q\n");
         current_proc = removeProcQ(&ready_q);
         // TIMESLICE = 5000, time is in ps (1 ms = 1000 ps)
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
@@ -29,7 +27,7 @@ void scheduler()
     {
         // Entering a Wait State
         // All bit set to zero (PLT disabled) OR Interrupts Enabled OR Interrupt Mask full ON, with this the PLT became disabled
-        klog_print("Waiting...\n");
+        // klog_print("Waiting...\n");
         setSTATUS(ALLOFF | IECON | IMON);
         WAIT();
     }

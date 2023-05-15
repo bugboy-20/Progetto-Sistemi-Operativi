@@ -133,9 +133,9 @@ void termInterruptHandler(int IntlineNo, int DevNo)
 void interrupt_handler()
 {
     unsigned int cause = EXCEPTION_STATE->cause; // Custom system for getting cause
-    klog_print("cause: ");
-    klog_print_hex(cause);
-    klog_print("\n");
+    // klog_print("Interrupt cause: ");
+    // klog_print_hex(cause);
+    // klog_print("\n");
 
     // ignoring interrupt line 0
 
@@ -168,8 +168,6 @@ void interrupt_handler()
         pseudoclock_semaphore = 0;
         // Return control to the Current Process with LDST
         // If not present return to the scheduler, which will do WAIT() or HALT()
-        klog_print("siamo dentroo exeption->timer:\n");
-        KLOG_PRETTI_PRINT("crrent",current_proc);
         if (current_proc != NULL)
             LDST(EXCEPTION_STATE);
         else
