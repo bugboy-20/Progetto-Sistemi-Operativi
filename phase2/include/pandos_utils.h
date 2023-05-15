@@ -24,6 +24,7 @@ extern int *value_bak;
 
 #define  EXCEPTION_STATE ((state_t*)BIOSDATAPAGE)
 
+#define POG print("\tPOG\n")
 
 typedef int size_t;
 // copia porzione di memoria
