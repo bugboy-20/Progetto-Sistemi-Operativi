@@ -1,4 +1,6 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
+#include "klog.h"
+#include <pandos_utils.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 #include <umps3/umps/const.h>
@@ -6,18 +8,17 @@
 #include <pandos_const.h>
 #include <pandos_types.h>
 #include <ash.h>
-#include <initial.h>
 #include <list.h>
 #include <pcb.h>
 #include <scheduler.h>
 #include <systemcall.h>
 
-#define IDBM 0x10000040        // Interrupt Devices BitMap
-#define TERMINALBM IDBM + 0x10 // Interrupt Line 7 Interrupting Devices Bit Map
-#define PRINTERBM IDBM + 0x0C  // Interrupt Line 6 Interrupting Devices Bit Map
-#define NETWORKBM IDBM + 0x08  // Interrupt Line 5 Interrupting Devices Bit Map
-#define FLASHBM IDBM + 0x04    // Interrupt Line 4 Interrupting Devices Bit Map
-#define DISKBM IDBM + 0x00     // Interrupt Line 3 Interrupting Devices Bit Map
+#define IDBM 0x10000040          // Interrupt Devices BitMap
+#define TERMINALBM (IDBM + 0x10) // Interrupt Line 7 Interrupting Devices Bit Map
+#define PRINTERBM (IDBM + 0x0C)  // Interrupt Line 6 Interrupting Devices Bit Map
+#define NETWORKBM (IDBM + 0x08)  // Interrupt Line 5 Interrupting Devices Bit Map
+#define FLASHBM (IDBM + 0x04)    // Interrupt Line 4 Interrupting Devices Bit Map
+#define DISKBM (IDBM + 0x00)     // Interrupt Line 3 Interrupting Devices Bit Map
 
 #define RT_STATUS 0xFF
 
@@ -28,17 +29,15 @@
 
 #define devAddrBase(IntlineNo, DevNo) (memaddr)(0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10))
 
-static inline int getDevNo(const int bitMap)
+static inline int getDevNo(unsigned int *bitMap_address)
 {
+    unsigned int bitMap = *bitMap_address;
     for (char i = 0; i < 8; i++)
-        if (1 << i & bitMap)
+        if ((1 << i) & bitMap)
             return i;
 
     return -1; // Error
 }
-
-// TODO workaround, bisogna capire perchè non lo trova da solo il compilatore
-// extern void verhogen(int *semAddr);
 
 void dtpInterruptHandler(int IntlineNo, int DevNo)
 {
@@ -51,7 +50,7 @@ void dtpInterruptHandler(int IntlineNo, int DevNo)
     // Perform a V operation on the Nucleus maintained semaphore associated with this (sub)device. This operation should unblock the process (pcb) which initiated this I/O operation and then requested to wait for its completion via a SYS5 operation.
     int *devSem = (int *)dev_sem_addr(IntlineNo, DevNo);
     pcb_t *proc = headBlocked(devSem);
-    verhogen(devSem);
+    V(devSem);
     // If this process is present
     if (proc != NULL)
     {
@@ -60,11 +59,11 @@ void dtpInterruptHandler(int IntlineNo, int DevNo)
         // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
         // Already done by the Verhogen
     }
-    else
-    {
-        // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
-        soft_block_count -= 1;
-    }
+    // else
+    // {
+    //     // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
+    //     soft_block_count -= 1;
+    // }
     if (current_proc != NULL)
         LDST(EXCEPTION_STATE); // Return control to the Current Process: Perform a LDST on the saved exception state
     else
@@ -80,7 +79,7 @@ void termInterruptHandler(int IntlineNo, int DevNo)
     if ((term->transm_status & RT_STATUS) > READY)
     {
         // Save off the status code from the device’s device register
-        status = term->transm_status;
+        status = term->transm_status & 0xF;
         // Acknowledge the outstanding interrupt. This is accomplished by writing the acknowledge command code in the interrupting device’s device register
         term->transm_command = ACK;
         // Perform a V operation on the Nucleus maintained semaphore associated with this (sub)device. This operation should unblock the process (pcb) which initiated this I/O operation and then requested to wait for its completion via a SYS5 operation.
@@ -97,18 +96,26 @@ void termInterruptHandler(int IntlineNo, int DevNo)
     }
 
     pcb_t *proc = headBlocked(devSem);
-    verhogen(devSem);
+    V(devSem);
     // If this process is present
     if (proc != NULL)
     {
         // Place the stored off status code in the newly unblocked pcb’s v0 register.
-        proc->p_s.reg_v0 = status;
+        proc->p_s.reg_v0 = 0;
+        value_bak[0] = status;
+
         // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
-        insertProcQ(&ready_q, proc);
+        // insertProcQ(&ready_q, proc);
     }
-    // Return control to the Current Process: Perform a LDST on the saved exception state
-    state_t *state = EXCEPTION_STATE;
-    LDST(state);
+    // else
+    // {
+    //     // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
+    //     soft_block_count -= 1;
+    // }
+    if (current_proc != NULL)
+        LDST(EXCEPTION_STATE); // Return control to the Current Process: Perform a LDST on the saved exception state
+    else
+        scheduler(); // Call the scheduler;
 }
 
 /*
@@ -126,6 +133,9 @@ void termInterruptHandler(int IntlineNo, int DevNo)
 void interrupt_handler()
 {
     unsigned int cause = EXCEPTION_STATE->cause; // Custom system for getting cause
+    klog_print("cause: ");
+    klog_print_hex(cause);
+    klog_print("\n");
 
     // ignoring interrupt line 0
 
@@ -150,7 +160,6 @@ void interrupt_handler()
         pcb_t *proc;
         while ((proc = removeBlocked(&pseudoclock_semaphore)) != NULL)
         {
-            // TODO: direi che devo metterli nella ready q?
             insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
         }
@@ -159,6 +168,8 @@ void interrupt_handler()
         pseudoclock_semaphore = 0;
         // Return control to the Current Process with LDST
         // If not present return to the scheduler, which will do WAIT() or HALT()
+        klog_print("siamo dentroo exeption->timer:\n");
+        KLOG_PRETTI_PRINT("crrent",current_proc);
         if (current_proc != NULL)
             LDST(EXCEPTION_STATE);
         else
@@ -166,11 +177,11 @@ void interrupt_handler()
     }
     // Line 3-7, these ar the devices
     else if (cause & DISKINTERRUPT)
-        dtpInterruptHandler(DISKINT, getDevNo(DISKBM));
+        dtpInterruptHandler(DISKINT, getDevNo((memaddr *)DISKBM));
     else if (cause & FLASHINTERRUPT)
-        dtpInterruptHandler(FLASHINT, getDevNo(FLASHBM));
+        dtpInterruptHandler(FLASHINT, getDevNo((memaddr *)FLASHBM));
     else if (cause & PRINTINTERRUPT)
-        dtpInterruptHandler(PRNTINT, getDevNo(PRINTERBM));
+        dtpInterruptHandler(PRNTINT, getDevNo((memaddr *)PRINTERBM));
     else if (cause & TERMINTERRUPT)
-        termInterruptHandler(TERMINT, getDevNo(TERMINALBM));
+        termInterruptHandler(TERMINT, getDevNo((memaddr *)TERMINALBM));
 }

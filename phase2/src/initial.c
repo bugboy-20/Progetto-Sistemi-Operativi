@@ -1,7 +1,7 @@
 #include <ash.h>
 #include <pcb.h>
 #include <ns.h>
-#include <initial.h>
+#include <pandos_utils.h>
 #include <scheduler.h>
 #include <exceptions.h>
 #include <list.h>
@@ -19,6 +19,7 @@ struct list_head ready_q;
 int sem_table[NUMSEM];
 int pseudoclock_semaphore;
 cpu_t start_time;
+int *value_bak;
 
 int main() {
     // Inizialize the Pass Up Vector
@@ -73,12 +74,3 @@ int main() {
     return 0;
 }
 
-void *memcpy(void *dest, const void * src, size_t n) {
-    char byte;
-    for(int i=0; i<n; i++) {
-        byte = *((char*) src+i);
-        *((char*) dest+i) = byte;
-
-    }
-    return dest;
-}

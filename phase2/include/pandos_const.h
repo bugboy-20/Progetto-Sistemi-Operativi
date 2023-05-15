@@ -183,6 +183,6 @@
 /* End of Mikeyg constants */
 
 /* Custom constants */
-#define NUMSEM 48
+#define NUMSEM (DEVICECNT + 8)
 
 #endif

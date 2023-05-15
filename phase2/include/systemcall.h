@@ -3,6 +3,7 @@
 
 #include <pandos_types.h>
 #include <types.h>
+#include <pandos_utils.h>
 
 // SYS1
 void create_process(state_t *, struct support_t *, nsd_t *);
