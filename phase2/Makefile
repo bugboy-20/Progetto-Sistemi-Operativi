@@ -7,7 +7,7 @@ SDIR = /usr/share/umps3
 PANDOS_HEADERS = ./include
 SOURCE = src
 BUILD = build
-TEST_FILE = p2test.01
+TEST_FILE = p2test.02
 CFLAGS = -ffreestanding -ansi -mips1 -mabi=32 -std=gnu99 -mno-gpopt -EL -G 0 -mno-abicalls -fno-pic -mfp32 -I$(UDIR) -I$(UDIR)/umps3 -I$(PANDOS_HEADERS) -Wall -O0
 LFLAGS = -G 0 -nostdlib -T $(SDIR)/umpscore.ldscript -m elf32ltsmip
 OBJECTS = $(BUILD)/$(TEST_FILE).o $(BUILD)/exceptions.o $(BUILD)/initial.o $(BUILD)/interrupts.o $(BUILD)/scheduler.o $(BUILD)/systemcall.o $(BUILD)/pandos_utils.o $(BUILD)/pcb.o $(BUILD)/ash.o $(BUILD)/ns.o $(BUILD)/klog.o $(BUILD)/libumps.o $(BUILD)/crtso.o

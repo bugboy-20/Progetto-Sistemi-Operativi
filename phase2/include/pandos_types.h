@@ -8,7 +8,7 @@
  ****************************************************************************/
 
 #include <umps3/umps/types.h>
-#include "pandos_const.h"
+#include <pandos_const.h>
 #include <list.h>
 
 
@@ -20,24 +20,26 @@
 typedef signed int   cpu_t;
 typedef unsigned int memaddr;
 
-/* process context */
+/* Page Table Entry descriptor */
+typedef struct pteEntry_t {
+    unsigned int pte_entryHI;
+    unsigned int pte_entryLO;
+} pteEntry_t;
+
+/* Support level context */
 typedef struct context_t {
-    /* process context fields */
-    unsigned int stackPtr, /* stack pointer value */
-    status, /* status reg value */
-    pc; /* PC address */
+    unsigned int stackPtr;
+    unsigned int status;
+    unsigned int pc;
 } context_t;
 
+/* Support level descriptor */
 typedef struct support_t {
-    int sup_asid; /* Process Id (asid) */
-    state_t sup_exceptState[2]; /* stored excpt states */
-    context_t sup_exceptContext[2]; /* pass up contexts */
-    // ... other fields to be added later
+    int        sup_asid;                        /* process ID                                 */
+    state_t    sup_exceptState[2];              /* old state exceptions                       */
+    context_t  sup_exceptContext[2];            /* new contexts for passing up        */
+    pteEntry_t sup_privatePgTbl[USERPGTBLSIZE]; /* user page table                            */
 } support_t;
-
-/* Exceptions related constants */
-#define PGFAULTEXCEPT 0
-#define GENERALEXCEPT 1
 
 typedef struct nsd_t {
     /* Namespace type */
@@ -64,14 +66,14 @@ typedef struct pcb_t {
     /* Pointer to the semaphore the process is currently blocked on */
     int *p_semAdd;
 
+    /* Pointer to the support struct */
+    support_t *p_supportStruct;
+
     /* Namespace list */
     nsd_t *namespaces[NS_TYPE_MAX];
 
-    /* Support structure */
-    support_t *p_supportStruct;
-
     /* Process ID */
-    unsigned int p_pid;
+    int p_pid;
 } pcb_t, *pcb_PTR;
 
 

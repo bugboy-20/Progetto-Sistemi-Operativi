@@ -9,11 +9,8 @@
 
 #include <umps3/umps/const.h>
 
-/* Workaround Redefine NULL as 0, in umps3 is defined as -1 */
-#ifdef NULL
-#  undef NULL
-#  define NULL ((void *)0)
-#endif
+#undef NULL
+#define NULL 0
 
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/
@@ -54,16 +51,6 @@
 #define GETSUPPORTPTR 8
 #define GETPROCESSID  9
 #define GETCHILDREN   10
-#define WRITEPRINTER  11
-#define WRITETERMINAL 12
-#define READTERMINAL  13
-#define DISK_GET      14
-#define DISK_PUT      15
-#define FLASH_READ    16
-#define FLASH_WRITE   17
-#define DELAY         18
-#define PSEMVIRT      19
-#define VSEMVIRT      20
 
 
 /* Status register constants */
@@ -182,7 +169,5 @@
 #define POOLSIZE (UPROCMAX * 2)
 /* End of Mikeyg constants */
 
-/* Custom constants */
-#define NUMSEM (DEVICECNT + 8)
 
 #endif

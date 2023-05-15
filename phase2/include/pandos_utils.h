@@ -5,6 +5,8 @@
 #include <pandos_const.h>
 #include <pandos_types.h>
 
+#define NUMSEM (DEVICECNT + 8)
+
 extern passupvector_t* pass_up_vector;
 extern int process_count;
 extern int soft_block_count;
