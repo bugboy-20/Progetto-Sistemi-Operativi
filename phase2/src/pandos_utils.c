@@ -39,7 +39,7 @@ bool P(int *semAddr)
         {
             insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
-            return BLOCKING;
+            return !BLOCKING;
         }
     }
 }
@@ -66,7 +66,7 @@ bool V(int *semAddr)
         {
             insertProcQ(&ready_q, proc);
             soft_block_count -= 1;
-            return BLOCKING;
+            return !BLOCKING;
         }
     }
 }
