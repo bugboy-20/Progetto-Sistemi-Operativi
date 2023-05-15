@@ -48,7 +48,7 @@ void exception_handler()
         // call to program trap exception handler or else
         // WORKAROUND per evitare di chiamare la terminate_process
         pass_up_or_die(GENERALEXCEPT);
-        //scheduler();
+        // scheduler();
         break;
     }
 }
@@ -102,7 +102,7 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
         break;
     case DOIO:
         // klog_print("Caso do_io in syscall handler\n");
-        do_io((unsigned int*) a1, (unsigned int) a2);
+        do_io((int *)a1, (int *)a2);
         break;
     // Michele
     case GETTIME:

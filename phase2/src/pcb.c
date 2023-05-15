@@ -177,7 +177,7 @@ static void definePcb(pcb_t *p)
     for (int i = 0; i < NS_TYPE_MAX; i++)
         p->namespaces[i] = NULL;
 
-    p->p_pid = p;
+    p->p_pid = (int)p;
 }
 
 static bool isUndefined(struct list_head *l)
