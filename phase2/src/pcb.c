@@ -70,7 +70,7 @@ pcb_t *headProcQ(struct list_head *head)
 {
     if (emptyProcQ(head))
         return NULL;
-    
+
     return list_first_entry(head, pcb_t, p_list);
 }
 
@@ -78,7 +78,7 @@ pcb_t *removeProcQ(struct list_head *head)
 {
     if (emptyProcQ(head))
         return NULL;
-    
+
     pcb_t *tmp = headProcQ(head);
     list_del_init(&tmp->p_list);
 
@@ -172,8 +172,12 @@ static void definePcb(pcb_t *p)
 
     p->p_semAdd = NULL;
 
+    p->p_supportStruct = NULL;
+
     for (int i = 0; i < NS_TYPE_MAX; i++)
         p->namespaces[i] = NULL;
+
+    p->p_pid = p;
 }
 
 static bool isUndefined(struct list_head *l)

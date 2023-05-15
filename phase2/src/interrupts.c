@@ -59,11 +59,11 @@ void dtpInterruptHandler(int IntlineNo, int DevNo)
         // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
         // Already done by the Verhogen
     }
-    else
-    {
-        // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
-        soft_block_count -= 1;
-    }
+    // else
+    // {
+    //     // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
+    //     soft_block_count -= 1;
+    // }
     if (current_proc != NULL)
         LDST(EXCEPTION_STATE); // Return control to the Current Process: Perform a LDST on the saved exception state
     else
@@ -107,11 +107,11 @@ void termInterruptHandler(int IntlineNo, int DevNo)
         // Insert the newly unblocked pcb on the Ready Queue, transitioning this process from the “blocked” state to the “ready” state.
         // insertProcQ(&ready_q, proc);
     }
-    else
-    {
-        // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
-        soft_block_count -= 1;
-    }
+    // else
+    // {
+    //     // Verhogen decrement `soft_block_count` only if process != NULL, this needs to be decremented always 'cause of the DOIO syscall
+    //     soft_block_count -= 1;
+    // }
     if (current_proc != NULL)
         LDST(EXCEPTION_STATE); // Return control to the Current Process: Perform a LDST on the saved exception state
     else

@@ -66,7 +66,7 @@ void terminate_process(int pid)
     pcb_t *dead_proc = get_proc(pid);
     terminate_recursively(dead_proc);
 
-        syscall_end(!TERMINATED, !BLOCKING);
+    syscall_end(!TERMINATED, !BLOCKING);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
@@ -130,6 +130,7 @@ void do_io(int *cmdAddr, int *cmdValues)
 
             // la richiesta di IO blocca sempre il processo
             int *devSemAddr = (int *)dev_sem_addr(7, n);
+            *devSemAddr = 0; // forcing the P call to be blocking
             P(devSemAddr);
 
             *command = cmdValues[1];
@@ -143,6 +144,7 @@ void do_io(int *cmdAddr, int *cmdValues)
 
             // la richiesta di IO blocca sempre il processo
             int *devSemAddr = (int *)dev_sem_addr(7 + 1, n);
+            *devSemAddr = 0; // forcing the P call to be blocking
             P(devSemAddr);
 
             *command = cmdValues[1];
@@ -210,7 +212,7 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
 {
     if (terminated)
     {
-        current_proc=NULL;
+        current_proc = NULL;
         scheduler();
         return;
     }
@@ -241,33 +243,30 @@ HIDDEN void terminate_recursively(pcb_t *proc)
      */
     if (proc == NULL)
         return;
-    outChild(proc);
 
-    // TODO: incrementare il semaforo giusto se necessario
-
-    // WORKAROUND patch per farlo stampare
     process_count -= 1;
 
-    if (proc == current_proc)
-    {
-        freePcb(proc);
-        current_proc = NULL;
-        // running state, don't have to do anything (?)
-    }
-    else if (outProcQ(&ready_q, proc) == NULL) // ready state
-    {
-        // blocked state
-        outBlocked(proc);
-        // TODO: aggiustare il soft-block count se necessario
-        soft_block_count -= 1;
-    }
-
     struct pcb_t *tmp;
-
     list_for_each_entry(tmp, &proc->p_child, p_sib)
     {
         terminate_recursively(tmp);
     }
+
+    if (proc->p_pid == current_proc->p_pid)
+    {
+        // running state, kill the current process
+        current_proc = NULL;
+    }
+    else if (outProcQ(&ready_q, proc) == NULL) // ready state
+    {
+        // blocked state
+        if (outBlocked(proc) != NULL)
+        {
+            soft_block_count -= 1;
+        }
+    }
+    outChild(proc);
+    freePcb(proc);
 }
 
 HIDDEN pcb_t *get_proc(int pid)
@@ -284,5 +283,9 @@ HIDDEN pcb_t *get_proc(int pid)
             return tmp;
         }
     }
+
+    // TODO: potrebbe essere solo così l'intera funzione
+    if (pid != 0)
+        return (pcb_t *)pid;
     return NULL;
 }
