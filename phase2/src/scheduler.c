@@ -10,12 +10,15 @@ void scheduler()
     // klog_print("Scheduler");
     // KLOG_PRETTI_PRINT("Process count: ", process_count);
     // KLOG_PRETTI_PRINT("Soft block: ", soft_block_count);
+    // start_time = TOD timer
+    STCK(start_time);
     if (!emptyProcQ(&ready_q))
     {
         // klog_print("not empty ready_q\n");
         current_proc = removeProcQ(&ready_q);
         // TIMESLICE = 5000, time is in ps (1 ms = 1000 ps)
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
+        //KLOG_PRETTI_PRINT("start_time: ", start_time);
         LDST(&(current_proc->p_s));
     }
     else if (process_count == 0)
@@ -34,6 +37,7 @@ void scheduler()
     else if (process_count > 0 && soft_block_count == 0)
     {
         // Deadlock
+        klog_print("DEADLOCK da Scheduler\n");
         PANIC();
     }
 

@@ -146,6 +146,10 @@ void interrupt_handler()
         setTIMER(TIMESLICE * (*((cpu_t *)TIMESCALEADDR)));
         // Copy the processor state in the current process status
         current_proc->p_s = *EXCEPTION_STATE;
+        // Save time of process before transition running -> ready
+        cpu_t end_time;
+        STCK(end_time);
+        current_proc->p_time += (end_time - start_time);
         // Move the process from running to ready
         insertProcQ(&ready_q, current_proc);
         // Call the scheduler

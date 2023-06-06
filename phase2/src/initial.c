@@ -39,6 +39,9 @@ int main() {
     soft_block_count=0;
     mkEmptyProcQ(&ready_q);
     current_proc = NULL;
+    for (int i = 0; i < NUMSEM; i++)
+        sem_table[i] = 1;
+    pseudoclock_semaphore = 0;
 
     // Set Interval Timer to 100ms = 100000ps
     LDIT(PSECOND);
