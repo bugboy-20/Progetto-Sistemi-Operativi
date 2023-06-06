@@ -65,6 +65,8 @@ typedef unsigned int devregtr;
 
 #define NS_MAXCHILDREN 5
 
+#define USERSYSCALL 11
+
 
 int sem_term_mut = 1,              /* for mutual exclusion on terminal */
     s[MAXSEM + 1],                 /* semaphore array */
@@ -334,8 +336,6 @@ void test() {
         SYSCALL(PASSEREN, (int)&sem_endp8, 0, 0);
     }
 
-    SYSCALL(PASSEREN, (int)&sem_endp4, 0, 0);
-
     SYSCALL(CREATEPROCESS, (int)&p11state, (int)NULL, (int)NULL); /* start p7		*/
     SYSCALL(PASSEREN, (int)&sem_p11, 0, 0);
 
@@ -598,7 +598,7 @@ void p5a() {
 void p5b() {
     cpu_t time1, time2;
 
-    SYSCALL(1, 0, 0, 0);
+    SYSCALL(USERSYSCALL, 0, 0, 0);
     SYSCALL(PASSEREN, (int)&sem_endp4, 0, 0); /* P(sem_endp4)*/
 
     /* do some delay to be reasonably sure p4 and its offspring are dead */
@@ -631,7 +631,7 @@ void p5b() {
 void p6() {
     print("p6 starts\n");
 
-    SYSCALL(11, 0, 0, 0); /* should cause termination because p6 has no
+    SYSCALL(USERSYSCALL, 0, 0, 0); /* should cause termination because p6 has no
            trap vector */
 
     print("error: p6 alive after SYS9() with no trap vector\n");
@@ -692,7 +692,7 @@ void child2() {
 
     int ppid = SYSCALL(GETPROCESSID, 1, 0, 0);
     if (ppid != p8pid) {
-        print("Inconsistent (parent) process id for p8's first child\n");
+        print("Inconsistent (parent) process id for p8's second child\n");
         PANIC();
     }
 
