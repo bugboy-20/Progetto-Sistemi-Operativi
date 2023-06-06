@@ -105,7 +105,7 @@ void do_io(int *cmdAddr, int *cmdValues)
     int n = ((*cmdAddr - 0x10000054) - ((type - 3) * 0x80)) / 0x10;
     */
 
-    int *status = &cmdAddr[0];
+    // int *status = &cmdAddr[0];
     int *command = &cmdAddr[1];
     value_bak = cmdValues;
 
@@ -201,11 +201,11 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     if (blocking)
     {
         current_proc->p_s = *EXCEPTION_STATE;
-        current_proc = NULL;
         // TODO: aggiornare il CPU time per il processo corrente
         cpu_t end_time;
         STCK(end_time);
         current_proc->p_time += (end_time - start_time);
+        current_proc = NULL;
         // TODO: capire come fare a fare la transition da uno stato ready a blocked
         scheduler();
     }
