@@ -60,13 +60,21 @@ void terminate_process(int pid)
     {
         // termino il processo corrente e tutta la sua progenie
         terminate_recursively(current_proc);
+        // TODO controllare se le due righe successive si possono commentare
         syscall_end(TERMINATED, !BLOCKING);
         return;
     }
     pcb_t *dead_proc = get_proc(pid);
     terminate_recursively(dead_proc);
-
-    syscall_end(!TERMINATED, !BLOCKING);
+    if (current_proc == NULL)
+    {
+        syscall_end(TERMINATED, !BLOCKING);
+    }
+    else
+    {
+        insertProcQ(&ready_q, current_proc);
+        syscall_end(TERMINATED, !BLOCKING);
+    }
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
@@ -208,16 +216,8 @@ HIDDEN void terminate_recursively(pcb_t *proc)
     /**
      * manuale al capitolo 3.9
      */
-    if (proc == NULL)
-        return;
-
-    process_count -= 1;
-
-    struct pcb_t *tmp;
-    list_for_each_entry(tmp, &proc->p_child, p_sib)
-    {
-        terminate_recursively(tmp);
-    }
+    while (!emptyChild(proc))
+        terminate_recursively(removeChild(proc));
 
     if (proc->p_pid == current_proc->p_pid)
     {
@@ -232,12 +232,14 @@ HIDDEN void terminate_recursively(pcb_t *proc)
             soft_block_count -= 1;
         }
     }
+    process_count -= 1;
     outChild(proc);
     freePcb(proc);
 }
 
 HIDDEN pcb_t *get_proc(int pid)
 {
+    /*
     if (current_proc->p_pid == pid)
         return current_proc;
 
@@ -250,6 +252,7 @@ HIDDEN pcb_t *get_proc(int pid)
             return tmp;
         }
     }
+    */
 
     // TODO: potrebbe essere solo così l'intera funzione
     if (pid != 0)
