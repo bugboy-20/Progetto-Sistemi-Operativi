@@ -60,8 +60,7 @@ void terminate_process(int pid)
     if (current_proc != NULL)
     {
         // Get end time
-        cpu_t end_time;
-        STCK(end_time);
+        time_now(end_time);
         // Update process time before transition running -> ready
         current_proc->p_time += (end_time - start_time);
         insertProcQ(&ready_q, current_proc);
@@ -129,8 +128,7 @@ void do_io(int *cmdAddr, int *cmdValues)
 
 void get_cpu_time()
 {
-    unsigned int end_time;
-    STCK(end_time);
+    time_now(end_time);
     EXCEPTION_STATE->reg_v0 = current_proc->p_time + (end_time - start_time);
     syscall_end(!TERMINATED, !BLOCKING);
 }
@@ -193,8 +191,7 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     {
         current_proc->p_s = *EXCEPTION_STATE;
         // TODO: aggiornare il CPU time per il processo corrente
-        cpu_t end_time;
-        STCK(end_time);
+        time_now(end_time);
         current_proc->p_time += (end_time - start_time);
         current_proc = NULL;
         // TODO: capire come fare a fare la transition da uno stato ready a blocked
