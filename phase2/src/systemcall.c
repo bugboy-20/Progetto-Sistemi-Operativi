@@ -56,25 +56,17 @@ void create_process(state_t *statep, struct support_t *supportp, nsd_t *ns)
 
 void terminate_process(int pid)
 {
-    if (pid == 0 || current_proc->p_pid == pid)
+    terminate_recursively(get_proc(pid));
+    if (current_proc != NULL)
     {
-        // termino il processo corrente e tutta la sua progenie
-        terminate_recursively(current_proc);
-        // TODO controllare se le due righe successive si possono commentare
-        syscall_end(TERMINATED, !BLOCKING);
-        return;
-    }
-    pcb_t *dead_proc = get_proc(pid);
-    terminate_recursively(dead_proc);
-    if (current_proc == NULL)
-    {
-        syscall_end(TERMINATED, !BLOCKING);
-    }
-    else
-    {
+        // Get end time
+        cpu_t end_time;
+        STCK(end_time);
+        // Update process time before transition running -> ready
+        current_proc->p_time += (end_time - start_time);
         insertProcQ(&ready_q, current_proc);
-        syscall_end(TERMINATED, !BLOCKING);
     }
+    syscall_end(TERMINATED, !BLOCKING);
 }
 
 // questa syscall e` bloccante, capitolo 3.5.11
@@ -108,7 +100,6 @@ void do_io(int *cmdAddr, int *cmdValues)
     // int *status = &cmdAddr[0];
     int *command = &cmdAddr[1];
     value_bak = cmdValues;
-
 
     for (int n = 0; n < DEVPERINT; n++)
     {
@@ -259,7 +250,8 @@ HIDDEN pcb_t *get_proc(int pid)
     */
 
     // TODO: potrebbe essere solo così l'intera funzione
-    if (pid != 0)
+    if (pid == 0)
+        return current_proc;
+    else // pid == 0
         return (pcb_t *)pid;
-    return NULL;
 }
