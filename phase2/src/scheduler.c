@@ -11,7 +11,6 @@ void scheduler()
     // KLOG_PRETTI_PRINT("Process count: ", process_count);
     // KLOG_PRETTI_PRINT("Soft block: ", soft_block_count);
     // start_time = TOD timer
-    STCK(start_time);
     if (!emptyProcQ(&ready_q))
     {
         // klog_print("not empty ready_q\n");
@@ -19,6 +18,8 @@ void scheduler()
         // TIMESLICE = 5000, time is in ps (1 ms = 1000 ps)
         setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
         //KLOG_PRETTI_PRINT("start_time: ", start_time);
+        // TODO: controllare che STCK vada fatto solo in questo caso, se messo prima dell'if farebbe casino con il tempo (?)
+        STCK(start_time);
         LDST(&(current_proc->p_s));
     }
     else if (process_count == 0)
@@ -33,6 +34,8 @@ void scheduler()
         // klog_print("Waiting...\n");
         setSTATUS(ALLOFF | IECON | IMON);
         WAIT();
+        klog_print("Post wait\n");
+        klog_print_hex(EXCEPTION_STATE->status);
     }
     else if (process_count > 0 && soft_block_count == 0)
     {

@@ -876,7 +876,7 @@ void p11() {
     ns2_b_pid = SYSCALL(CREATEPROCESS, (int)&ns2_b_state, (int)NULL, (int)ns2);
 
     /* Get children should return only the number of children in our namespace */
-    children_number = SYSCALL(GETCHILDREN, (int)NULL, 0, 0);
+    children_number = SYSCALL(GETCHILDREN, (int)NULL, 0, 0); // TODO: Questa syscall manda in loop il programma, da riguardare
     if (children_number != 2) {
         print("Inconsistent GETCHILDREN namespace management 1\n");
         PANIC();

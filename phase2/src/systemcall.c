@@ -199,6 +199,8 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     }
     else
     {
+        // TODO: controllare che effettivamente vada fatto STCK prima di ogni LDST
+        STCK(start_time);
         LDST(EXCEPTION_STATE);
     }
 }
