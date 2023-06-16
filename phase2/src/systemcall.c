@@ -168,7 +168,7 @@ void get_children(int *children, int size)
     {
         if (getNamespace(current_proc, NS_PID) == getNamespace(i, NS_PID))
         {
-            if (counter < size)
+            if (children != NULL && counter < size)
                 children[counter] = i->p_pid;
             counter++;
         }
