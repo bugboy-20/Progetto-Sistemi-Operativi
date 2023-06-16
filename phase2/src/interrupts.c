@@ -39,6 +39,7 @@ static inline int getDevNo(unsigned int *bitMap_address)
     return -1; // Error
 }
 
+// TODO: Controllare che sia sensata anche la parte dei device generici e non solo quella dei terminali
 void dtpInterruptHandler(int IntlineNo, int DevNo)
 {
     // Calculate the address for this device's register
