@@ -32,10 +32,16 @@ void scheduler()
         // Entering a Wait State
         // All bit set to zero (PLT disabled) OR Interrupts Enabled OR Interrupt Mask full ON, with this the PLT became disabled
         // klog_print("Waiting...\n");
-        setSTATUS(ALLOFF | IECON | IMON);
-        WAIT();
-        klog_print("Post wait\n");
-        klog_print_hex(EXCEPTION_STATE->status);
+        // If WAIT is awakened by something but the situation is the same we recall WAIT
+        // TODO: prova se cambiando la Interrupt Mask funziona, altrimenti lasciare un while
+        while (process_count > 0 && soft_block_count > 0)
+        {
+            setSTATUS(ALLOFF | IECON | IMON);
+            WAIT();
+            klog_print("Post wait\n");
+            KLOG_PRETTI_PRINT("Registro Cause: ", EXCEPTION_STATE->cause);
+            KLOG_PRETTI_PRINT("Registro Status: ", EXCEPTION_STATE->status);
+        }
     }
     else if (process_count > 0 && soft_block_count == 0)
     {
