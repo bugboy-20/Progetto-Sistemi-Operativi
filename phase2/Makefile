@@ -61,4 +61,4 @@ $(BUILD)/pandos_utils.o: $(SOURCE)/pandos_utils.c
 
 
 clean:
-	rm kernel *.umps -r $(BUILD)/*
+	rm kernel *.umps -rf $(BUILD)/*
