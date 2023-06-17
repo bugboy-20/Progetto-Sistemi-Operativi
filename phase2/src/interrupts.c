@@ -129,7 +129,7 @@ void interrupt_handler()
     if (cause & LOCALTIMERINT)
     {
         // Acknowledge the PLT interrupt, and load the timer again
-        setTIMER(TIMESLICE * (*((cpu_t *)TIMESCALEADDR)));
+        setTIMER(TIMESLICE_TICKS);
         // Copy the processor state in the current process status
         current_proc->p_s = *EXCEPTION_STATE;
         // Save time of process before transition running -> ready

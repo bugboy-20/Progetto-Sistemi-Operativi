@@ -4,7 +4,6 @@
 #include <pandos_utils.h>
 #include <scheduler.h>
 #include <exceptions.h>
-#include <list.h>
 #include <umps3/umps/libumps.h>
 #include <pandos_const.h>
 
@@ -51,7 +50,7 @@ int main() {
     // Enable interrupts (IEPON), enable processor Local Timer (TEBITON), kernel mode on
     // IEPON = Interrupts Enable Previous ON
     // TEBITON = Timer Enable BIT ON
-    // USERPON = USER Process ON, we need the the process in Kernel mode, so we use 0 as baseline
+    // USERPON = USER Process ON, we need the process in Kernel mode, so we use 0 as baseline
     init->p_s.status = 0 | IEPON | TEBITON;
     // SP set to RAMTOP, reg_sp is a macro for accessing the bit tied to the stack pointer
     RAMTOP(init->p_s.reg_sp);

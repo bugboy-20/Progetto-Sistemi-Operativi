@@ -44,4 +44,7 @@ bool V(int *);
 //((*cmdAddr - startaddress) - ((type - 3) * register size)) / device n size;
 #define getNumDevice(cmdAddr) ((((int)cmdAddr - 0x10000054) - ((getTypeDevice(cmdAddr) - 3) * 0x80)) / 0x10)
 
+// Macro for the timeslice in the format required by setTIMER (aka nubers of ticks)
+#define TIMESLICE_TICKS (TIMESLICE * (*((cpu_t*) TIMESCALEADDR)))
+
 #endif /* UTILS_H */

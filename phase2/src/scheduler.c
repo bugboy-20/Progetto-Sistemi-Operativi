@@ -10,7 +10,7 @@ void scheduler()
     {
         current_proc = removeProcQ(&ready_q);
         // TIMESLICE = 5000, time is in ps (1 ms = 1000 ps)
-        setTIMER(TIMESLICE * (*((cpu_t*) TIMESCALEADDR)));
+        setTIMER(TIMESLICE_TICKS);
         // start_time = TOD timer
         STCK(start_time);
         LDST(&(current_proc->p_s));

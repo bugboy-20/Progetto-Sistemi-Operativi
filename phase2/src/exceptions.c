@@ -1,3 +1,4 @@
+#include "umps/const.h"
 #include <pandos_utils.h>
 #include <exceptions.h>
 #include <interrupts.h>
@@ -7,6 +8,12 @@
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 #include <scheduler.h>
+
+// Pass Up or Die function, if supportStruct is NULL kill the process, otherwise pass up it
+HIDDEN void pass_up_or_die(int exep_code);
+
+// Handler for system calls
+HIDDEN void syscall_handler(unsigned int, unsigned int, unsigned int, unsigned int);
 
 void exception_handler()
 {
@@ -49,7 +56,7 @@ void exception_handler()
     }
 }
 
-void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
+HIDDEN void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
     if ((EXCEPTION_STATE->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
@@ -106,7 +113,7 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
     }
 }
 
-void pass_up_or_die(int exep_code)
+HIDDEN void pass_up_or_die(int exep_code)
 {
     if (current_proc->p_supportStruct == NULL)
         terminate_process(0);
