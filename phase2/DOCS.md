@@ -1,5 +1,17 @@
 # Documentazione progetto SO fase 2
 
+## TODO
+- syscall_end
+- macro per semafori
+- come abbiamo salvato i vari semafori
+- WAIT che proseguiva, come abbiamo risolto
+- DOIO
+  - Come trovare l'indirizzo giusto
+  - Come restituire il valore corretto (array values)
+- Interval timer sempre caricato con il tempo corretto, mai con il tempo massimo
+- Gestione di P e di V diverse dalle system call passeren e verhogen
+- pid sono i propri indirizzi
+
 ## Scelte implementative
 
 Sono qui sotto elencate cosa abbiamo fatto nei casi in cui la scelta è stata lasciata libera
