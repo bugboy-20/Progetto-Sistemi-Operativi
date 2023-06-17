@@ -24,8 +24,7 @@ extern int *value_bak;
 #define EXCEPTION_STATE ((state_t *)BIOSDATAPAGE)
 
 typedef int size_t;
-// copia porzione di memoria
-// possibile rischio di buffer overflow
+// copy a memory portion
 void *memcpy(void *dest, const void *src, size_t n);
 
 // Definition of binary semaphore operation

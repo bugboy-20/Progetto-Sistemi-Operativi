@@ -61,6 +61,16 @@ static void next_char(void) {
 static void next_line(void) {
     klog_line_index = (klog_line_index + 1) % KLOG_LINES;
     klog_char_index = 0;
+    if (klog_line_index == 0)
+    {
+        for (int i = 0; i < KLOG_LINES; i++)
+        {
+            for (int j = 0; j < KLOG_LINE_SIZE; j++)
+            {
+                klog_buffer[i][j] = ' ';
+            }
+        }
+    }
     // Clean out the rest of the line for aesthetic purposes
     for (unsigned int i = 0; i < KLOG_LINE_SIZE; i++) {
         klog_buffer[klog_line_index][i] = ' ';

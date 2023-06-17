@@ -1,12 +1,10 @@
 #include <systemcall.h>
+#include <pandos_const.h>
 #include <umps3/umps/libumps.h>
-#include <types.h>
 #include <pcb.h>
 #include <ash.h>
 #include <ns.h>
-#include <pandos_utils.h>
 #include <scheduler.h>
-#include <pandos_const.h>
 
 #define BLOCKING true
 #define TERMINATED true
@@ -94,51 +92,28 @@ void do_io(int *cmdAddr, int *cmdValues)
     int *command = &cmdAddr[1];
     value_bak = cmdValues;
 
-    switch (type)
+    if (type >= 3 && type <= 7)
     {
-    case 3 ... 6:
-        // Case for Normal Devices
+        // Case for Terminals if it's in receive mode
+        if (type == 7 && &devregarea->devreg[type - 3][n_dev].term.recv_command == (unsigned int *)command)
+            type += 1;
+
         // IO request is always blocking
         int *devSemAddr = (int *)dev_sem_addr(type, n_dev);
         *devSemAddr = 0; // forcing the P call to be blocking
         P(devSemAddr);
         *command = cmdValues[1];
-        break;
 
-    case 7:
-        // Case for Terminals
-        // if it's in transmission mode
-        if (&devregarea->devreg[type - 3][n_dev].term.transm_command == (unsigned int *)command)
-        {
-            // IO request is always blocking
-            int *devSemAddr = (int *)dev_sem_addr(type, n_dev);
-            *devSemAddr = 0; // forcing the P call to be blocking
-            P(devSemAddr);
-
-            *command = cmdValues[1];
-        }
-        // else it's in receve mode
-        else if (&devregarea->devreg[type - 3][n_dev].term.recv_command == (unsigned int *)command)
-        {
-            // IO request is always blocking
-            int *devSemAddr = (int *)dev_sem_addr(type + 1, n_dev);
-            *devSemAddr = 0; // forcing the P call to be blocking
-            P(devSemAddr);
-
-            *command = cmdValues[1];
-        }
-        break;
-    
-    default:
+        // All ok, return 0 and call syscall_end
+        current_proc->p_s.reg_v0 = 0;
+        syscall_end(!TERMINATED, BLOCKING);
+    }
+    else
+    {
         // Type error, return -1
         current_proc->p_s.reg_v0 = -1;
         syscall_end(!TERMINATED, BLOCKING);
-        break;
     }
-    
-    // All ok, return 0 and call syscall_end
-    current_proc->p_s.reg_v0 = 0;
-    syscall_end(!TERMINATED, BLOCKING);
 }
 
 void get_cpu_time()

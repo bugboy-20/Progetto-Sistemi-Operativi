@@ -1,9 +1,8 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#include <pandos_types.h>
-#include <types.h>
 #include <pandos_utils.h>
+#include <pandos_types.h>
 
 // SYS1
 void create_process(state_t *, struct support_t *, nsd_t *);
@@ -34,8 +33,5 @@ void get_process_id(bool parent);
 
 // SYS10
 void get_children(int *children, int size);
-
-// SYSTEM CALL 1-5 -> PISKE
-//             6-10 -> MICHELE
 
 #endif /* SYSCALL_h */

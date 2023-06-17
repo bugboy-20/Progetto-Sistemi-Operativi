@@ -1,16 +1,12 @@
-// Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
+#include <interrupts.h>
 #include <pandos_utils.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
-#include <umps3/umps/const.h>
-#include <umps3/umps/types.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
 #include <ash.h>
-#include <list.h>
 #include <pcb.h>
 #include <scheduler.h>
-#include <systemcall.h>
 
 #define IDBM 0x10000040          // Interrupt Devices BitMap
 #define TERMINALBM (IDBM + 0x10) // Interrupt Line 7 Interrupting Devices Bit Map
@@ -22,10 +18,6 @@
 #define RT_STATUS 0xFF
 
 // calculate the address of the device's device register
-/*inline memaddr devAddrBase(int IntlineNo, int DevNo) {
-    return 0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10);
-}*/
-
 #define devAddrBase(IntlineNo, DevNo) (memaddr)(0x10000054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10))
 
 static inline int getDevNo(unsigned int *bitMap_address)
@@ -146,12 +138,8 @@ void interrupt_handler()
         // Load the Interval Timer with 100ms
         LDIT(PSECOND);
         // Unblock ALL pcbs blocked on the pseudo-clock semaphore
-        pcb_t *proc;
-        while ((proc = removeBlocked(&pseudoclock_semaphore)) != NULL)
-        {
-            insertProcQ(&ready_q, proc);
-            soft_block_count -= 1;
-        }
+        while (headBlocked(&pseudoclock_semaphore) != NULL)
+            V(&pseudoclock_semaphore);
 
         // Reset the Pseudo-clock semaphore to 0
         pseudoclock_semaphore = 0;
@@ -162,7 +150,7 @@ void interrupt_handler()
         else
             scheduler();
     }
-    // Line 3-7, these ar the devices
+    // Line 3-7, these are the devices
     else if (cause & DISKINTERRUPT)
         dtpInterruptHandler(DISKINT, getDevNo((memaddr *)DISKBM));
     else if (cause & FLASHINTERRUPT)
