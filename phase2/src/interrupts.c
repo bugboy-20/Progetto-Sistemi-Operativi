@@ -1,5 +1,4 @@
 // Parte di Simone, ma c'ha messo le mandi Diego MUAHAHAH
-#include "klog.h"
 #include <pandos_utils.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
@@ -123,9 +122,6 @@ void termInterruptHandler(int IntlineNo, int DevNo)
 void interrupt_handler()
 {
     unsigned int cause = EXCEPTION_STATE->cause; // Custom system for getting cause
-    // klog_print("Interrupt cause: ");
-    // klog_print_hex(cause);
-    // klog_print("\n");
 
     // ignoring interrupt line 0
 

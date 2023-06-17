@@ -7,7 +7,6 @@
 #include <pandos_utils.h>
 #include <scheduler.h>
 #include <pandos_const.h>
-#include <klog.h>
 
 #define BLOCKING true
 #define TERMINATED true

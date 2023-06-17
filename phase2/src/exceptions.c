@@ -4,7 +4,6 @@
 #include <pandos_const.h>
 #include <pandos_types.h>
 #include <systemcall.h>
-#include <klog.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 #include <scheduler.h>
@@ -12,9 +11,6 @@
 void exception_handler()
 {
     const int exception_code = CAUSE_GET_EXCCODE(EXCEPTION_STATE->cause);
-    // klog_print("Exception code: ");
-    // klog_print_hex(exception_code);
-    // klog_print("\n");
 
     switch (exception_code)
     {
@@ -112,15 +108,10 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
 
 void pass_up_or_die(int exep_code)
 {
-    // klog_print("Dentro pass_up_or_die\n");
     if (current_proc->p_supportStruct == NULL)
-    {
-        // klog_print("p_supportStruct == NULL, terminate_process\n");
         terminate_process(0);
-    }
     else
     {
-        // klog_print("p_supportStruct != NULL\n");
         current_proc->p_supportStruct->sup_exceptState[exep_code] = *EXCEPTION_STATE;
         context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
         LDCXT(exep_context.stackPtr, exep_context.status, exep_context.pc);

@@ -1,6 +1,5 @@
 #include <pandos_utils.h>
 #include <pcb.h>
-#include <klog.h>
 #include <scheduler.h>
 #include <umps/const.h>
 #include <umps/libumps.h>
