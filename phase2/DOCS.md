@@ -8,7 +8,6 @@
 - DOIO
   - Come trovare l'indirizzo giusto
   - Come restituire il valore corretto (array values)
-- Interval timer sempre caricato con il tempo corretto, mai con il tempo massimo
 - Gestione di P e di V diverse dalle system call passeren e verhogen
 - pid sono i propri indirizzi
 
@@ -41,3 +40,13 @@ I due parametri booleani servono per identificare in quale stato si trova, **ter
 La terminazione di un processo avviene tramite una funzione ricorsiva sui figli di tale processo.
 
 ### Funzioni per gestire i device
+
+I device e i loro indirizzi sono stati gestiti attraverso piccole funzioni e macro, ciò semplifica la lettura ed evita di ripetere blocchi di codice.
+All'avvento di un interrupt il device viene dedotto scorrendo iterativamente bit a bit la bit map degli interrupts
+
+### Interval timer sempre caricato con il tempo corretto, mai con il tempo massimo (TODO non ho idea 
+
+Il comando LDIT viene sempre eseguito usando 100ms, questo perché allora scattare del timer interrupt l'interval timer viene reimpostato a 0xFF FF FF FF, quindi prima che si ripresenti abbiamo a disposizione 5·10^9 cicli di clock (che con la CPU impostata a 1MHz corrisponde a 1h30~), più che sufficienti per eseguire le operazioni richieste senza doverlo riportare al massimo
+
+
+
