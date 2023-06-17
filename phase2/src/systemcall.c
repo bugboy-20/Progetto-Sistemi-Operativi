@@ -68,60 +68,76 @@ void terminate_process(int pid)
     syscall_end(TERMINATED, !BLOCKING);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void passeren(int *semAddr)
 {
     bool is_blocking = P(semAddr);
     syscall_end(!TERMINATED, is_blocking);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void verhogen(int *semAddr)
 {
     bool is_blocking = V(semAddr);
     syscall_end(!TERMINATED, is_blocking);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void do_io(int *cmdAddr, int *cmdValues)
 {
     /**
      * cmdValues is an array of 2 elements for the terminal devices,
      * 4 elements for all the other devices
      */
-    /*
-    // ((address - startaddress) / register size) + device starting index
-    int type = ((*cmdAddr - 0x10000054) / 0x80) + 3;
-    //((*cmdAddr - startaddress) - ((type - 3) * register size)) / device n size;
-    int n = ((*cmdAddr - 0x10000054) - ((type - 3) * 0x80)) / 0x10;
-    */
+    int type = getTypeDevice(cmdAddr);
+    int n_dev = getNumDevice(cmdAddr);
 
-    // int *status = &cmdAddr[0];
     int *command = &cmdAddr[1];
     value_bak = cmdValues;
 
-    for (int n = 0; n < DEVPERINT; n++)
+    switch (type)
     {
-        // Terminals are the 4th device
-        if (&devregarea->devreg[4][n].term.transm_command == (unsigned int *)command)
+    case 3 ... 6:
+        // Case for Normal Devices
+        // IO request is always blocking
+        int *devSemAddr = (int *)dev_sem_addr(type, n_dev);
+        *devSemAddr = 0; // forcing the P call to be blocking
+        P(devSemAddr);
+        *command = cmdValues[1];
+        break;
+
+    case 7:
+        // Case for Terminals
+        // if it's in transmission mode
+        if (&devregarea->devreg[type - 3][n_dev].term.transm_command == (unsigned int *)command)
         {
-            // la richiesta di IO blocca sempre il processo
-            int *devSemAddr = (int *)dev_sem_addr(7, n);
+            // IO request is always blocking
+            int *devSemAddr = (int *)dev_sem_addr(type, n_dev);
             *devSemAddr = 0; // forcing the P call to be blocking
             P(devSemAddr);
 
             *command = cmdValues[1];
         }
-        if (&devregarea->devreg[4][n].term.recv_command == (unsigned int *)command)
+        // else it's in receve mode
+        else if (&devregarea->devreg[type - 3][n_dev].term.recv_command == (unsigned int *)command)
         {
-            // la richiesta di IO blocca sempre il processo
-            int *devSemAddr = (int *)dev_sem_addr(7 + 1, n);
+            // IO request is always blocking
+            int *devSemAddr = (int *)dev_sem_addr(type + 1, n_dev);
             *devSemAddr = 0; // forcing the P call to be blocking
             P(devSemAddr);
 
             *command = cmdValues[1];
         }
+        break;
+    
+    default:
+        // Type error, return -1
+        current_proc->p_s.reg_v0 = -1;
+        syscall_end(!TERMINATED, BLOCKING);
+        break;
     }
+    
+    // All ok, return 0 and call syscall_end
     current_proc->p_s.reg_v0 = 0;
     syscall_end(!TERMINATED, BLOCKING);
 }
@@ -133,7 +149,7 @@ void get_cpu_time()
     syscall_end(!TERMINATED, !BLOCKING);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void wait_for_clock()
 {
     P(&pseudoclock_semaphore);

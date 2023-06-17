@@ -38,4 +38,10 @@ bool V(int *);
 
 #define STATUS_MASK_FOR_WAIT ((IECON | IMON) & 0xFFFFFCFF)
 
+// Macros for choosing the correct device, used in DOIO
+// ((address - startaddress) / register size) + device starting index
+#define getTypeDevice(cmdAddr) (((int)cmdAddr - 0x10000054) / 0x80 + 3)
+//((*cmdAddr - startaddress) - ((type - 3) * register size)) / device n size;
+#define getNumDevice(cmdAddr) ((((int)cmdAddr - 0x10000054) - ((getTypeDevice(cmdAddr) - 3) * 0x80)) / 0x10)
+
 #endif /* UTILS_H */
