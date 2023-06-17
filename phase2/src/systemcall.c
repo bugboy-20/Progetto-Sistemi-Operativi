@@ -198,11 +198,7 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
         scheduler();
     }
     else
-    {
-        // TODO: controllare che effettivamente vada fatto STCK prima di ogni LDST
-        STCK(start_time);
         LDST(EXCEPTION_STATE);
-    }
 }
 
 HIDDEN void terminate_recursively(pcb_t *proc)

@@ -66,11 +66,7 @@ void dtpInterruptHandler(int IntlineNo, int DevNo)
     //     soft_block_count -= 1;
     // }
     if (current_proc != NULL)
-    {
-        // TODO: controllare che effettivamente vada fatto STCK prima di ogni LDST
-        STCK(start_time);
         LDST(EXCEPTION_STATE); // Return control to the Current Process: Perform a LDST on the saved exception state
-    }
     else
         scheduler(); // Call the scheduler;
 }
@@ -118,11 +114,7 @@ void termInterruptHandler(int IntlineNo, int DevNo)
     //     soft_block_count -= 1;
     // }
     if (current_proc != NULL)
-    {
-        // TODO: controllare che effettivamente vada fatto STCK prima di ogni LDST
-        STCK(start_time);
         LDST(EXCEPTION_STATE); // Return control to the Current Process: Perform a LDST on the saved exception state
-    }
     else
         scheduler(); // Call the scheduler;
 }
@@ -152,9 +144,7 @@ void interrupt_handler()
     if (cause & LOCALTIMERINT)
     {
         // Acknowledge the PLT interrupt, and load the timer again
-        // TODO: Controllare se caricare il PLT con un valore enorme sia corretto, invece di caricarlo con il valore di 100ms, l'output non cambia al momento
-        // setTIMER(TIMESLICE * (*((cpu_t *)TIMESCALEADDR)));
-        setTIMER(__UINT32_MAX__);
+        setTIMER(TIMESLICE * (*((cpu_t *)TIMESCALEADDR)));
         // Copy the processor state in the current process status
         current_proc->p_s = *EXCEPTION_STATE;
         // Save time of process before transition running -> ready
@@ -183,11 +173,7 @@ void interrupt_handler()
         // Return control to the Current Process with LDST
         // If not present return to the scheduler, which will do WAIT() or HALT()
         if (current_proc != NULL)
-        {
-        // TODO: controllare che effettivamente vada fatto STCK prima di ogni LDST
-            STCK(start_time);
             LDST(EXCEPTION_STATE);
-        }
         else
             scheduler();
     }
