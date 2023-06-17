@@ -23,8 +23,6 @@ extern int *value_bak;
 
 #define EXCEPTION_STATE ((state_t *)BIOSDATAPAGE)
 
-#define POG print("\tPOG\n")
-
 typedef int size_t;
 // copia porzione di memoria
 // possibile rischio di buffer overflow
@@ -37,5 +35,7 @@ bool V(int *);
 #define time_now(var) \
     cpu_t var;        \
     STCK(var);
+
+#define STATUS_MASK_FOR_WAIT ((IECON | IMON) & 0xFFFFFCFF)
 
 #endif /* UTILS_H */
