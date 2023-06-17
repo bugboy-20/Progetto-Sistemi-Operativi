@@ -189,12 +189,11 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     EXCEPTION_STATE->pc_epc += WORDLEN;
     if (blocking)
     {
+        // The blocking system calls have a P in them, so the process is already blocked, we just need to save the current_proc state and time
         current_proc->p_s = *EXCEPTION_STATE;
-        // TODO: aggiornare il CPU time per il processo corrente
         time_now(end_time);
         current_proc->p_time += (end_time - start_time);
         current_proc = NULL;
-        // TODO: capire come fare a fare la transition da uno stato ready a blocked
         scheduler();
     }
     else
