@@ -229,24 +229,9 @@ HIDDEN void terminate_recursively(pcb_t *proc)
 
 HIDDEN pcb_t *get_proc(int pid)
 {
-    /*
-    if (current_proc->p_pid == pid)
-        return current_proc;
-
-    struct pcb_t *tmp;
-
-    list_for_each_entry(tmp, &ready_q, p_list)
-    {
-        if (tmp->p_pid == pid)
-        {
-            return tmp;
-        }
-    }
-    */
-
-    // TODO: potrebbe essere solo così l'intera funzione
+    // The pid of our process is their address, so (pcb_t *)pid
     if (pid == 0)
         return current_proc;
-    else // pid == 0
+    else // pid != 0
         return (pcb_t *)pid;
 }
