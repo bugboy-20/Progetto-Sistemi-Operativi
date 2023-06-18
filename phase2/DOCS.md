@@ -1,16 +1,5 @@
 # Documentazione progetto SO fase 2
 
-## TODO
-
-- macro per semafori
-- ~~come abbiamo salvato i vari semafori~~
-- ~~WAIT che proseguiva, come abbiamo risolto~~
-- ~~DOIO~~
-  - ~~Come trovare l'indirizzo giusto~~
-  - ~~Come restituire il valore corretto (array values)~~
-- ~~Gestione di P e di V diverse dalle system call passeren e verhogen~~
-- ~~pid sono i propri indirizzi~~
-
 ## Scelte implementative
 
 Sono qui sotto elencate cosa abbiamo fatto nei casi in cui la scelta è stata lasciata libera
@@ -20,7 +9,7 @@ Sono qui sotto elencate cosa abbiamo fatto nei casi in cui la scelta è stata la
 Abbiamo implementato semafori binari, quindi gli unici valori accettati sono 0 e 1. Una P sul valore 0 è bloccante, una V sul valore 1 è bloccante.
 
 Le operazioni di P e V sono implementate in un file a parte. Abbiamo fatto questa scelta perché in questo modo è possibile avere più flessibilità di utilizzo e meno codice ripetuto. 
-Infatti vengono richiamate nelle systemcall passeren e verhogen, ma anche in altri contesti.
+Infatti vengono richiamate nelle systemcall `passeren` e `verhogen`, ma anche in altri contesti.
 Le due funzioni restituiscono un valore booleano: _true_ nel caso in cui la chiamata sia bloccante, _false_ altrimenti.
 
 
@@ -66,14 +55,27 @@ I device e i loro indirizzi sono stati gestiti attraverso piccole funzioni e mac
 All'avvento di un interrupt il device viene dedotto scorrendo iterativamente bit a bit la bit map degli interrupts.
 
 
-### Interval timer sempre caricato con il tempo corretto, mai con il tempo massimo (TODO non ho idea)
+### PLT timer sempre caricato con il tempo corretto anche per fare l'ACK
 
-Il comando LDIT viene sempre eseguito usando 100ms, questo perché allo scattare del timer interrupt l'interval timer viene reimpostato a `0xFF FF FF FF`, quindi prima che si ripresenti abbiamo a disposizione $5·10^9\sim$ cicli di clock (che con la CPU impostata a 1MHz corrisponde a 1h30~), più che sufficienti per eseguire le operazioni richieste senza doverlo riportare al massimo
+Il comando `setTIMER()` viene sempre eseguito usando `TIMESLICE_TICKS`, questo perché veniva lasciata libera scelta dal manuale su come fare l'ACK sul PLT.
+Per coerenza abbiamo preferito usare sempre lo stesso tempo.
+
+### Tempo del Kernel assegnato ai processi che lo chiamano
+
+Abbiamo deciso di assegnare il tempo durante il quale viene eseguito il Kernel (`exception_handler`, `interrupt_handler`, systemcall, ecc) al processo per il quale era stato richiamato.
+Questo viene fatto salvando il tempo dei processi subito prima di richiamare lo scheduler.
+
+### File `pandos_utils.h`
+
+Abbiamo dichiarato le variabili globali del Kernel, come `current_proc`, i semafori, ecc, nel file `pandos_utils.h`. Abbiamo utilizzato la keyword `extern` perché in questo modo le variabili del file `initial.c` sono accessibili e visibili in tutto il Kernel.
+
+Inoltre in quest'ultimo file abbiamo inserito una serie di utils come macro e definizioni che aiutano la leggibilità del codice. Queste ultime sono molto generiche e servono in molteplici parti del Kernel.
 
 
 ## Problemi riscontrati
 
 ### Problema con lo stato WAIT
 
-A volte accadeva che andasse in WAIT senza gestire correttamente gli interrupt bloccando di fatto l'esecuzione dell'intero sistema.
-Per risolvere abbiamo disabilitato gli interrupt sulla linea 1 e 2 (interval timer e PLT).
+> Reference: Section 7.2.2 Kernel-Mode MIPS Assembly Instructions from uMPS3 Principles of Operation
+
+Come da manuale l'istruzione `WAIT()` potrebbe comunque lasciare eseguire codice successivo ad essa in caso di un masked interrupt. A questo punto abbiamo prima inserito una chiamata allo scheduler subito dopo la `WAIT()`, poi abbiamo inserito la chiamata in un ciclo while, così da effettuare un controllo nel caso sia tornato libero un processo. Infine abbiamo scelto di implementarlo disattivando nella maschera degli interrupt i bit relativi a PLT e all'Interval Timer.
