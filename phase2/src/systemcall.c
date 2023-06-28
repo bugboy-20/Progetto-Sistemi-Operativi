@@ -1,13 +1,10 @@
 #include <systemcall.h>
+#include <pandos_const.h>
 #include <umps3/umps/libumps.h>
-#include <types.h>
 #include <pcb.h>
 #include <ash.h>
 #include <ns.h>
-#include <pandos_utils.h>
 #include <scheduler.h>
-#include <pandos_const.h>
-#include <klog.h>
 
 #define BLOCKING true
 #define TERMINATED true
@@ -68,62 +65,55 @@ void terminate_process(int pid)
     syscall_end(TERMINATED, !BLOCKING);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void passeren(int *semAddr)
 {
     bool is_blocking = P(semAddr);
     syscall_end(!TERMINATED, is_blocking);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void verhogen(int *semAddr)
 {
     bool is_blocking = V(semAddr);
     syscall_end(!TERMINATED, is_blocking);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void do_io(int *cmdAddr, int *cmdValues)
 {
     /**
      * cmdValues is an array of 2 elements for the terminal devices,
      * 4 elements for all the other devices
      */
-    /*
-    // ((address - startaddress) / register size) + device starting index
-    int type = ((*cmdAddr - 0x10000054) / 0x80) + 3;
-    //((*cmdAddr - startaddress) - ((type - 3) * register size)) / device n size;
-    int n = ((*cmdAddr - 0x10000054) - ((type - 3) * 0x80)) / 0x10;
-    */
+    int type = getTypeDevice(cmdAddr);
+    int n_dev = getNumDevice(cmdAddr);
 
-    // int *status = &cmdAddr[0];
     int *command = &cmdAddr[1];
     value_bak = cmdValues;
 
-    for (int n = 0; n < DEVPERINT; n++)
+    if (type >= 3 && type <= 7)
     {
-        // Terminals are the 4th device
-        if (&devregarea->devreg[4][n].term.transm_command == (unsigned int *)command)
-        {
-            // la richiesta di IO blocca sempre il processo
-            int *devSemAddr = (int *)dev_sem_addr(7, n);
-            *devSemAddr = 0; // forcing the P call to be blocking
-            P(devSemAddr);
+        // Case for Terminals if it's in receive mode
+        if (type == 7 && &devregarea->devreg[type - 3][n_dev].term.recv_command == (unsigned int *)command)
+            type += 1;
 
-            *command = cmdValues[1];
-        }
-        if (&devregarea->devreg[4][n].term.recv_command == (unsigned int *)command)
-        {
-            // la richiesta di IO blocca sempre il processo
-            int *devSemAddr = (int *)dev_sem_addr(7 + 1, n);
-            *devSemAddr = 0; // forcing the P call to be blocking
-            P(devSemAddr);
+        // IO request is always blocking
+        int *devSemAddr = (int *)dev_sem_addr(type, n_dev);
+        *devSemAddr = 0; // forcing the P call to be blocking
+        P(devSemAddr);
+        *command = cmdValues[1];
 
-            *command = cmdValues[1];
-        }
+        // All ok, return 0 and call syscall_end
+        current_proc->p_s.reg_v0 = 0;
+        syscall_end(!TERMINATED, BLOCKING);
     }
-    current_proc->p_s.reg_v0 = 0;
-    syscall_end(!TERMINATED, BLOCKING);
+    else
+    {
+        // Type error, return -1
+        current_proc->p_s.reg_v0 = -1;
+        syscall_end(!TERMINATED, BLOCKING);
+    }
 }
 
 void get_cpu_time()
@@ -133,7 +123,7 @@ void get_cpu_time()
     syscall_end(!TERMINATED, !BLOCKING);
 }
 
-// questa syscall e` bloccante, capitolo 3.5.11
+// This system is blocking, Section 3.5.11
 void wait_for_clock()
 {
     P(&pseudoclock_semaphore);
@@ -189,20 +179,15 @@ HIDDEN void syscall_end(bool terminated, bool blocking)
     EXCEPTION_STATE->pc_epc += WORDLEN;
     if (blocking)
     {
+        // The blocking system calls have a P in them, so the process is already blocked, we just need to save the current_proc state and time
         current_proc->p_s = *EXCEPTION_STATE;
-        // TODO: aggiornare il CPU time per il processo corrente
         time_now(end_time);
         current_proc->p_time += (end_time - start_time);
         current_proc = NULL;
-        // TODO: capire come fare a fare la transition da uno stato ready a blocked
         scheduler();
     }
     else
-    {
-        // TODO: controllare che effettivamente vada fatto STCK prima di ogni LDST
-        STCK(start_time);
         LDST(EXCEPTION_STATE);
-    }
 }
 
 HIDDEN void terminate_recursively(pcb_t *proc)
@@ -233,24 +218,9 @@ HIDDEN void terminate_recursively(pcb_t *proc)
 
 HIDDEN pcb_t *get_proc(int pid)
 {
-    /*
-    if (current_proc->p_pid == pid)
-        return current_proc;
-
-    struct pcb_t *tmp;
-
-    list_for_each_entry(tmp, &ready_q, p_list)
-    {
-        if (tmp->p_pid == pid)
-        {
-            return tmp;
-        }
-    }
-    */
-
-    // TODO: potrebbe essere solo così l'intera funzione
+    // The pid of our process is their address, so (pcb_t *)pid
     if (pid == 0)
         return current_proc;
-    else // pid == 0
+    else // pid != 0
         return (pcb_t *)pid;
 }

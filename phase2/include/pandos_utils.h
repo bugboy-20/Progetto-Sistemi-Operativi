@@ -23,11 +23,8 @@ extern int *value_bak;
 
 #define EXCEPTION_STATE ((state_t *)BIOSDATAPAGE)
 
-#define POG print("\tPOG\n")
-
 typedef int size_t;
-// copia porzione di memoria
-// possibile rischio di buffer overflow
+// copy a memory portion
 void *memcpy(void *dest, const void *src, size_t n);
 
 // Definition of binary semaphore operation
@@ -37,5 +34,16 @@ bool V(int *);
 #define time_now(var) \
     cpu_t var;        \
     STCK(var);
+
+#define STATUS_MASK_FOR_WAIT ((IECON | IMON) & 0xFFFFFCFF)
+
+// Macros for choosing the correct device, used in DOIO
+// ((address - startaddress) / register size) + device starting index
+#define getTypeDevice(cmdAddr) (int)(((int)cmdAddr - 0x10000054) / 0x80 + 3)
+//((*cmdAddr - startaddress) - ((type - 3) * register size)) / device n size;
+#define getNumDevice(cmdAddr) (int)((((int)cmdAddr - 0x10000054) - ((getTypeDevice(cmdAddr) - 3) * 0x80)) / 0x10)
+
+// Macro for the timeslice in the format required by setTIMER (aka nubers of ticks)
+#define TIMESLICE_TICKS (TIMESLICE * (*((cpu_t*) TIMESCALEADDR)))
 
 #endif /* UTILS_H */

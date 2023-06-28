@@ -1,20 +1,22 @@
-#include <pandos_utils.h>
 #include <exceptions.h>
+#include <pandos_utils.h>
 #include <interrupts.h>
+#include <systemcall.h>
 #include <pandos_const.h>
 #include <pandos_types.h>
-#include <systemcall.h>
-#include <klog.h>
 #include <umps3/umps/cp0.h>
 #include <umps3/umps/libumps.h>
 #include <scheduler.h>
 
+// Pass Up or Die function, if supportStruct is NULL kill the process, otherwise pass up it
+HIDDEN void pass_up_or_die(int exep_code);
+
+// Handler for system calls
+HIDDEN void syscall_handler(unsigned int, unsigned int, unsigned int, unsigned int);
+
 void exception_handler()
 {
     const int exception_code = CAUSE_GET_EXCCODE(EXCEPTION_STATE->cause);
-    // klog_print("Exception code: ");
-    // klog_print_hex(exception_code);
-    // klog_print("\n");
 
     switch (exception_code)
     {
@@ -46,15 +48,18 @@ void exception_handler()
 
     default:
         // call to program trap exception handler or else
-        // WORKAROUND per evitare di chiamare la terminate_process
         pass_up_or_die(GENERALEXCEPT);
-        // scheduler();
         break;
     }
 }
 
-void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
+HIDDEN void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
+    /** controllare se siamo in kernel mode,
+     * se no e` necessario lanciare una trap
+     * inoltre se il processo usa un codice non valido deve essere terminato
+     * capitolo 3.5.9 e 3.7
+     */
     if ((EXCEPTION_STATE->status & STATUS_KUp) >> STATUS_KUp_BIT == 1)
     {
         // process is in user mode then trigger program trap exception
@@ -65,14 +70,9 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
         pass_up_or_die(GENERALEXCEPT);
         return;
     }
-    /** controllare se siamo in kernel mode,
-     * se no e` necessario lanciare una trap
-     * inoltre se il processo usa un codice non valido deve essere terminato
-     * capitolo 3.5.9 e 3.7
-     */
+
     switch (a0)
     {
-    // Pische
     case CREATEPROCESS:
         create_process((state_t *)a1, (struct support_t *)a2, (nsd_t *)a3);
         break;
@@ -88,7 +88,6 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
     case DOIO:
         do_io((int *)a1, (int *)a2);
         break;
-    // Michele
     case GETTIME:
         get_cpu_time();
         break;
@@ -102,7 +101,7 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
         get_process_id((bool)a1);
         break;
     case GETCHILDREN:
-        get_children((int *)a1, (int) a2);
+        get_children((int *)a1, (int)a2);
         break;
     default:
         pass_up_or_die(GENERALEXCEPT);
@@ -110,17 +109,14 @@ void syscall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned
     }
 }
 
-void pass_up_or_die(int exep_code)
+HIDDEN void pass_up_or_die(int exep_code)
 {
-    // klog_print("Dentro pass_up_or_die\n");
     if (current_proc->p_supportStruct == NULL)
-    {
-        // klog_print("p_supportStruct == NULL, terminate_process\n");
+        // no support struct, terminate current process
         terminate_process(0);
-    }
     else
     {
-        // klog_print("p_supportStruct != NULL\n");
+        // handle the pass up
         current_proc->p_supportStruct->sup_exceptState[exep_code] = *EXCEPTION_STATE;
         context_t exep_context = current_proc->p_supportStruct->sup_exceptContext[exep_code];
         LDCXT(exep_context.stackPtr, exep_context.status, exep_context.pc);

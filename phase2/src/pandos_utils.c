@@ -20,7 +20,6 @@ bool P(int *semAddr)
     // current process goes from running to blocked
     if (*semAddr == 0)
     {
-        // TODO: rimuovere current_proc dalla ready_q?
         insertBlocked(semAddr, current_proc);
         soft_block_count += 1;
         return BLOCKING;
